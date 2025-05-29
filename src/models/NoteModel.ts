@@ -12,40 +12,6 @@ export class NoteModel {
   private data: Note;
   private dragState: DragData;
 
-  // --- [임시: NoteController 호환용 CRUD/구독 메서드 추가] ---
-  static async getByBoardId(boardId: string): Promise<Note[]> {
-    throw new Error('getByBoardId는 구현되어 있지 않습니다.');
-  }
-
-  static async create(
-    noteData: import('./types').CreateNoteData
-  ): Promise<Note> {
-    throw new Error('create는 구현되어 있지 않습니다.');
-  }
-
-  static async update(
-    id: string,
-    updates: import('./types').UpdateNoteData
-  ): Promise<Note> {
-    throw new Error('update는 구현되어 있지 않습니다.');
-  }
-
-  static async delete(id: string): Promise<void> {
-    throw new Error('delete는 구현되어 있지 않습니다.');
-  }
-
-  static subscribeToChanges(
-    boardId: string,
-    callbacks: {
-      onInsert: (note: Note) => void;
-      onUpdate: (note: Note) => void;
-      onDelete: (noteId: string) => void;
-    }
-  ): () => void {
-    throw new Error('subscribeToChanges는 구현되어 있지 않습니다.');
-  }
-  // ------------------------------------------------------
-
   constructor(noteData: Note) {
     this.data = { ...noteData };
     this.dragState = {

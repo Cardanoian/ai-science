@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { AppController } from '../controllers/AppController';
 import type { AuthState } from '../controllers/AuthController';
+import type { Board } from '../models/types';
 import LoginModal from './components/LoginModal';
 import JoinClassModal from './components/JoinClassModal';
 
@@ -23,7 +24,7 @@ interface WelcomeViewProps {
   authState: AuthState;
   onNavigate: {
     toDashboard: () => void;
-    toBoard: (board: any) => void;
+    toBoard: (board: Board) => void;
   };
 }
 
@@ -137,7 +138,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
     // AuthController의 구독을 통해 자동으로 대시보드로 이동됨
   };
 
-  const handleJoinClassSuccess = (board: any) => {
+  const handleJoinClassSuccess = (board: Board) => {
     setShowJoinClassModal(false);
     onNavigate.toBoard(board);
   };
@@ -238,7 +239,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-            {RESEARCH_STEPS.map((step, index) => {
+            {RESEARCH_STEPS.map((step) => {
               const Icon = step.icon;
               return (
                 <div
@@ -281,9 +282,9 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-            {SCIENCE_TOPICS.map((topic, index) => (
+            {SCIENCE_TOPICS.map((topic) => (
               <div
-                key={index}
+                key={topic.title}
                 className='bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:-translate-y-1 cursor-pointer'
               >
                 <div className='flex items-start space-x-4'>

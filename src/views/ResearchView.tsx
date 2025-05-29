@@ -87,7 +87,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 }) => {
   const [project, setProject] = useState<ResearchProject | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [stepData, setStepData] = useState<Record<number, any>>({});
+  const [stepData, setStepData] = useState<Record<number, object>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -106,18 +106,21 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         setIsLoading(true);
 
         // 기존 프로젝트 조회 또는 새로 생성
-        const projectData =
-          await appController.researchController.initializeProject(
+        let projectData =
+          await appController.researchController.getProjectByNoteId(noteId);
+        if (!projectData) {
+          projectData = await appController.researchController.createProject(
             noteId,
             '나의 탐구 프로젝트',
             authState.profile?.display_name || '탐구자'
           );
+        }
 
         setProject(projectData);
         setCurrentStep(projectData.current_step);
 
         // 각 단계 데이터 로드
-        const allStepData: Record<number, any> = {};
+        const allStepData: Record<number, object> = {};
         for (let i = 1; i <= 6; i++) {
           const stepInfo = await appController.researchController.getStepData(
             projectData.id,
@@ -145,7 +148,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
   // 단계 데이터 저장
   const handleSaveStep = async (
     stepNumber: number,
-    content: any,
+    content: object,
     completed: boolean = false
   ) => {
     if (!project) return;
@@ -173,7 +176,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
   };
 
   // AI 도움 요청
-  const handleAIHelp = async (question: string, context?: any) => {
+  const handleAIHelp = async (question: string) => {
     try {
       // 사용자 메시지 추가
       const userMessage = {
@@ -187,8 +190,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
       const response =
         await appController.researchController.generateAIFeedback(
           question,
-          currentStep,
-          context
+          currentStep
         );
 
       // AI 응답 추가
@@ -515,10 +517,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 
                     <button
                       onClick={() =>
-                        handleAIHelp(
-                          '현재 단계에 대한 도움을 받고 싶어요',
-                          stepData[currentStep]
-                        )
+                        handleAIHelp('현재 단계에 대한 도움을 받고 싶어요')
                       }
                       className='px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-colors flex items-center space-x-2'
                     >
