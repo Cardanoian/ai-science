@@ -20,6 +20,15 @@ export interface Board {
   updated_at: string;
 }
 
+export interface CreateBoardData {
+  title: string;
+  description?: string;
+  background_color: string;
+  teacher_id: string;
+  class_code: string;
+  is_active?: boolean;
+}
+
 export interface Note {
   id: string;
   board_id: string;
@@ -30,6 +39,24 @@ export interface Note {
   author_name?: string;
   created_at: string;
   updated_at: string;
+}
+
+// 노트 생성/수정용 타입
+export interface CreateNoteData {
+  board_id: string;
+  content: string;
+  x_position: number;
+  y_position: number;
+  color: string;
+  author_name?: string;
+}
+
+export interface UpdateNoteData {
+  content?: string;
+  x_position?: number;
+  y_position?: number;
+  color?: string;
+  author_name?: string;
 }
 
 export interface ClassParticipant {
@@ -189,12 +216,39 @@ export interface ChartDataPoint {
   category?: string;
 }
 
+export interface ChartData {
+  id: string;
+  type: 'bar' | 'line' | 'pie';
+  title: string;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  data: ChartDataPoint[];
+}
+
 export interface ChartConfig {
   type: 'bar' | 'line' | 'pie' | 'scatter';
   title: string;
   xAxisLabel?: string;
   yAxisLabel?: string;
   data: ChartDataPoint[];
+}
+
+// Step4Component의 localData 타입
+export interface Step4LocalData {
+  experimentResults: string;
+  chartData?: ChartData;
+  hypothesisResult: string;
+  hypothesisExplanation: string;
+  conclusion: string;
+}
+
+export interface ResearchTopicRecommendation {
+  title: string;
+  description: string;
+  difficulty: string;
+  materials: string[];
+  safetyNote: string;
+  concepts: string[];
 }
 
 // AI 관련 타입

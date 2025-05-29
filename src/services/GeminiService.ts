@@ -44,8 +44,6 @@ export class GeminiAIService {
     if (!apiKey) {
       throw new Error('Gemini API 키가 설정되지 않았습니다.');
     }
-
-    // 새로운 @google/genai 클라이언트 초기화
     this.client = new GoogleGenAI({
       apiKey: apiKey,
     });
@@ -80,13 +78,19 @@ export class GeminiAIService {
     "safetyNote": "안전 주의사항"
   }
 ]
+(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
 `;
+
+      // TODO: console.log 지우기
+      console.log(interests, grade);
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
         config: { maxOutputTokens: 1000, temperature: 0.7 },
       });
+      // TODO: console.log 지우기
+      console.log(response);
 
       const content = response.text ?? '';
       const topics = JSON.parse(content);
@@ -130,6 +134,7 @@ export class GeminiAIService {
 - 학생의 노력을 인정
 - 구체적이고 실행 가능한 조언
 - 과학적 사고 과정 강조
+(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
 `;
 
       const response = await this.client.models.generateContent({
@@ -189,6 +194,7 @@ export class GeminiAIService {
 - 일상적인 재료 사용
 - 명확한 변인 구분
 - 구체적인 실험 절차
+(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
 `;
 
       const response = await this.client.models.generateContent({

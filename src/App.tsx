@@ -1,216 +1,238 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { User } from '@supabase/supabase-js';
-
-// 컴포넌트 imports
-import { WelcomeScreen } from './views/components/WelcomeScreen';
-import { TeacherDashboard } from './views/components/TeacherDashboard';
-import { Board } from './views/components/Board';
-
-// 컨트롤러 imports
-import { AuthController, UserProfile } from './controllers/AuthController';
-import { ClassController, ClassInfo } from './controllers/ClassController';
 import { AppController } from './controllers/AppController';
+import type { AuthState } from './controllers/AuthController';
+import type { Board } from './models/types';
+
+// Views
+import WelcomeView from './views/WelcomeView';
+import DashboardView from './views/DashboardView';
+import BoardView from './views/BoardView';
+import ResearchView from './views/ResearchView';
+import LoadingView from './views/LoadingView';
 
 // 앱 상태 타입
-type AppState =
-  | 'welcome' // 초기 화면
-  | 'teacher-dashboard' // 교사 대시보드
-  | 'class-board'; // 수업 보드 화면
+interface AppState {
+  currentView: 'welcome' | 'dashboard' | 'board' | 'research' | 'loading';
+  currentBoard: Board | null;
+  currentNoteId: string | null;
+  isInitialized: boolean;
+}
 
-function App() {
-  // 컨트롤러 인스턴스
-  const [authController] = useState(() => new AuthController());
-  const [classController] = useState(() => new ClassController());
+const App: React.FC = () => {
   const [appController] = useState(() => new AppController());
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    profile: null,
+    isLoading: true,
+    isAuthenticated: false,
+  });
+  const [appState, setAppState] = useState<AppState>({
+    currentView: 'loading',
+    currentBoard: null,
+    currentNoteId: null,
+    isInitialized: false,
+  });
 
-  // 상태 관리
-  const [appState, setAppState] = useState<AppState>('welcome');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [currentClass, setCurrentClass] = useState<ClassInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // 초기화 및 인증 상태 감지
+  // 앱 초기화
   useEffect(() => {
-    initializeApp();
+    const initializeApp = async () => {
+      try {
+        await appController.initialize();
 
-    // 인증 상태 변화 구독
-    const {
-      data: { subscription },
-    } = authController.onAuthStateChange(handleAuthStateChange);
+        // URL 파라미터 확인 (수업 참여 링크)
+        const urlParams = new URLSearchParams(window.location.search);
+        const joinCode = urlParams.get('join');
 
-    // URL 파라미터 확인 (수업 참여 링크)
-    checkUrlParameters();
-
-    return () => {
-      subscription.unsubscribe();
+        if (joinCode) {
+          // 수업 참여 플로우
+          setAppState((prev) => ({
+            ...prev,
+            currentView: 'welcome',
+            isInitialized: true,
+          }));
+        } else {
+          // 일반 플로우
+          setAppState((prev) => ({
+            ...prev,
+            currentView: 'welcome',
+            isInitialized: true,
+          }));
+        }
+      } catch (error) {
+        console.error('App initialization failed:', error);
+        setAppState((prev) => ({
+          ...prev,
+          currentView: 'welcome',
+          isInitialized: true,
+        }));
+      }
     };
-  }, []);
 
-  const initializeApp = async () => {
-    try {
-      const user = await authController.getCurrentUser();
-      if (user) {
-        await handleAuthStateChange(user);
+    initializeApp();
+  }, [appController]);
+
+  // 인증 상태 구독
+  useEffect(() => {
+    const unsubscribe = appController.authController.subscribe(
+      (newAuthState) => {
+        setAuthState(newAuthState);
+
+        // 인증 상태에 따른 뷰 변경
+        if (newAuthState.isAuthenticated && newAuthState.profile) {
+          if (
+            appState.currentView === 'welcome' ||
+            appState.currentView === 'loading'
+          ) {
+            setAppState((prev) => ({ ...prev, currentView: 'dashboard' }));
+          }
+        } else if (!newAuthState.isAuthenticated && !newAuthState.isLoading) {
+          setAppState((prev) => ({
+            ...prev,
+            currentView: 'welcome',
+            currentBoard: null,
+            currentNoteId: null,
+          }));
+        }
       }
-    } catch (error) {
-      console.error('App initialization error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAuthStateChange = async (user: User | null) => {
-    setCurrentUser(user);
-
-    if (user) {
-      // 사용자 프로필 로드
-      const profile = await authController.getUserProfile(user.id);
-      setUserProfile(profile);
-
-      // 교사인 경우 대시보드로, 학생인 경우는 현재 상태 유지
-      if (profile?.role === 'teacher') {
-        setAppState('teacher-dashboard');
-      }
-    } else {
-      // 로그아웃 시 초기 화면으로
-      setUserProfile(null);
-      setCurrentClass(null);
-      setAppState('welcome');
-    }
-  };
-
-  const checkUrlParameters = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const joinCode = urlParams.get('join');
-
-    if (joinCode) {
-      // URL에 수업 참여 코드가 있는 경우 자동으로 참여 시도
-      handleStudentJoin(joinCode);
-
-      // URL 파라미터 제거
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  };
-
-  const handleTeacherLogin = () => {
-    // 로그인 성공 시 AuthController의 onAuthStateChange에서 자동 처리됨
-  };
-
-  const handleStudentJoin = async (classCode: string, studentName?: string) => {
-    try {
-      const classInfo = await classController.joinClassByCode(
-        classCode,
-        studentName
-      );
-
-      if (classInfo) {
-        setCurrentClass(classInfo);
-        setAppState('class-board');
-      }
-    } catch (error) {
-      console.error('Student join error:', error);
-    }
-  };
-
-  const handleSelectClass = (classInfo: ClassInfo) => {
-    setCurrentClass(classInfo);
-    setAppState('class-board');
-  };
-
-  const handleBackToHome = () => {
-    if (currentUser && userProfile?.role === 'teacher') {
-      setAppState('teacher-dashboard');
-    } else {
-      setAppState('welcome');
-    }
-    setCurrentClass(null);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await authController.signOut();
-      // AuthController의 onAuthStateChange에서 자동으로 상태 변경됨
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  // 로딩 화면
-  if (loading) {
-    return (
-      <div className='min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4'></div>
-          <p className='text-gray-600 text-lg'>앱을 준비하고 있습니다...</p>
-        </div>
-      </div>
     );
+
+    return unsubscribe;
+  }, [appController.authController, appState.currentView]);
+
+  // 뷰 전환 핸들러들
+  const handleNavigate = {
+    toWelcome: () => {
+      setAppState((prev) => ({
+        ...prev,
+        currentView: 'welcome',
+        currentBoard: null,
+        currentNoteId: null,
+      }));
+    },
+
+    toDashboard: () => {
+      setAppState((prev) => ({ ...prev, currentView: 'dashboard' }));
+    },
+
+    toBoard: (board: Board) => {
+      setAppState((prev) => ({
+        ...prev,
+        currentView: 'board',
+        currentBoard: board,
+      }));
+    },
+
+    toResearch: (board: Board, noteId: string) => {
+      setAppState((prev) => ({
+        ...prev,
+        currentView: 'research',
+        currentBoard: board,
+        currentNoteId: noteId,
+      }));
+    },
+
+    back: () => {
+      if (appState.currentView === 'research') {
+        setAppState((prev) => ({ ...prev, currentView: 'board' }));
+      } else if (appState.currentView === 'board') {
+        setAppState((prev) => ({
+          ...prev,
+          currentView: 'dashboard',
+          currentBoard: null,
+        }));
+      } else {
+        setAppState((prev) => ({ ...prev, currentView: 'welcome' }));
+      }
+    },
+  };
+
+  // 로딩 중이면 로딩 뷰 표시
+  if (!appState.isInitialized || authState.isLoading) {
+    return <LoadingView />;
   }
 
-  // 상태별 화면 렌더링
+  // 현재 뷰 렌더링
+  const renderCurrentView = () => {
+    switch (appState.currentView) {
+      case 'welcome':
+        return (
+          <WelcomeView
+            appController={appController}
+            authState={authState}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'dashboard':
+        return (
+          <DashboardView
+            appController={appController}
+            authState={authState}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'board':
+        return (
+          <BoardView
+            appController={appController}
+            authState={authState}
+            board={appState.currentBoard!}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'research':
+        return (
+          <ResearchView
+            appController={appController}
+            authState={authState}
+            board={appState.currentBoard!}
+            noteId={appState.currentNoteId!}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      default:
+        return (
+          <WelcomeView
+            appController={appController}
+            authState={authState}
+            onNavigate={handleNavigate}
+          />
+        );
+    }
+  };
+
   return (
-    <>
-      {appState === 'welcome' && (
-        <WelcomeScreen
-          onTeacherLogin={handleTeacherLogin}
-          onStudentJoin={handleStudentJoin}
-        />
-      )}
+    <div className='min-h-screen bg-gray-50'>
+      {renderCurrentView()}
 
-      {appState === 'teacher-dashboard' && currentUser && (
-        <TeacherDashboard
-          user={currentUser}
-          onSelectClass={handleSelectClass}
-          onLogout={handleLogout}
-        />
-      )}
-
-      {appState === 'class-board' && currentClass && (
-        <Board
-          board={{
-            id: currentClass.id,
-            title: currentClass.title,
-            description: currentClass.description,
-            background_color: currentClass.background_color,
-            created_at: currentClass.created_at,
-            updated_at: currentClass.created_at,
-          }}
-          appController={appController}
-          onBackToHome={handleBackToHome}
-          classCode={currentClass.class_code}
-          isTeacher={userProfile?.role === 'teacher'}
-        />
-      )}
-
-      {/* 토스트 알림 */}
+      {/* Toast 알림 */}
       <Toaster
         position='top-right'
         toastOptions={{
-          duration: 3000,
+          duration: 4000,
           style: {
             background: '#363636',
             color: '#fff',
+            fontSize: '14px',
           },
           success: {
-            duration: 2000,
-            iconTheme: {
-              primary: '#4ade80',
-              secondary: '#fff',
+            style: {
+              background: '#10b981',
             },
           },
           error: {
-            duration: 4000,
-            iconTheme: {
-              primary: '#f87171',
-              secondary: '#fff',
+            style: {
+              background: '#ef4444',
             },
           },
         }}
       />
-    </>
+    </div>
   );
-}
+};
 
 export default App;

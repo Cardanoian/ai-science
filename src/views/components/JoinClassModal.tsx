@@ -1,167 +1,278 @@
-import React, { useState } from 'react';
-import { X, Hash, User } from 'lucide-react';
-import { ClassController } from '../../controllers/ClassController';
+// src/components/JoinClassModal.tsx
+import React, { useState, useEffect } from 'react';
+import { X, Users, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
+import type { ClassController } from '../../controllers/ClassController';
+import type { Board } from '../../models/types';
 
 interface JoinClassModalProps {
-  isOpen: boolean;
   onClose: () => void;
-  onJoinSuccess: (classCode: string, studentName?: string) => void;
+  onSuccess: (board: Board) => void;
+  classController: ClassController;
 }
 
-export const JoinClassModal: React.FC<JoinClassModalProps> = ({
-  isOpen,
+const JoinClassModal: React.FC<JoinClassModalProps> = ({
   onClose,
-  onJoinSuccess,
+  onSuccess,
+  classController,
 }) => {
-  const [classController] = useState(() => new ClassController());
-  const [loading, setLoading] = useState(false);
+  const [classCode, setClassCode] = useState('');
+  const [studentName, setStudentName] = useState('');
+  const [foundClass, setFoundClass] = useState<Board | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    classCode: '',
-    studentName: '',
-  });
+  // URL에서 수업 코드 추출
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get('join');
+    if (joinCode) {
+      setClassCode(joinCode);
+      handleSearchClass(joinCode);
+    }
+  }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value.toUpperCase(), // 수업 코드는 대문자로
-    }));
+  // 수업 코드 입력 처리
+  const handleCodeChange = (value: string) => {
+    // 숫자만 입력 허용, 6자리 제한
+    const numericValue = value.replace(/\D/g, '').slice(0, 6);
+    setClassCode(numericValue);
+    setError('');
+    setFoundClass(null);
+
+    // 6자리가 입력되면 자동 검색
+    if (numericValue.length === 6) {
+      handleSearchClass(numericValue);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.classCode || formData.classCode.length !== 6) {
-      alert('6자리 수업 코드를 정확히 입력해주세요.');
-      return;
-    }
-
-    if (!formData.studentName.trim()) {
-      alert('이름을 입력해주세요.');
-      return;
-    }
-
-    setLoading(true);
+  // 수업 검색
+  const handleSearchClass = async (code: string) => {
+    if (code.length !== 6) return;
 
     try {
-      const classInfo = await classController.joinClassByCode(
-        formData.classCode,
-        formData.studentName.trim()
-      );
+      setIsSearching(true);
+      setError('');
 
-      if (classInfo) {
-        onJoinSuccess(formData.classCode, formData.studentName.trim());
-        onClose();
+      const classData = await classController.getClassByCode(code);
+
+      if (classData) {
+        setFoundClass(classData);
+      } else {
+        setError('해당 수업 코드를 찾을 수 없습니다.');
+        setFoundClass(null);
       }
     } catch (error) {
-      console.error('Join class error:', error);
+      console.error('Failed to search class:', error);
+      setError('수업을 찾는 중 오류가 발생했습니다.');
+      setFoundClass(null);
     } finally {
-      setLoading(false);
+      setIsSearching(false);
     }
   };
 
-  const formatClassCode = (value: string) => {
-    // 숫자만 허용하고 6자리로 제한
-    const digits = value.replace(/\D/g, '').slice(0, 6);
-    return digits;
+  // 수업 참여
+  const handleJoinClass = async () => {
+    if (!foundClass || !studentName.trim()) return;
+
+    try {
+      setIsJoining(true);
+      setError('');
+
+      const result = await classController.joinClass(
+        classCode,
+        studentName.trim()
+      );
+
+      if (result) {
+        onSuccess(result);
+      }
+    } catch (error) {
+      console.error('Failed to join class:', error);
+      setError('수업 참여 중 오류가 발생했습니다.');
+    } finally {
+      setIsJoining(false);
+    }
   };
 
-  if (!isOpen) return null;
+  // 폼 제출
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!foundClass) {
+      if (classCode.length === 6) {
+        handleSearchClass(classCode);
+      } else {
+        setError('6자리 수업 코드를 입력해주세요.');
+      }
+      return;
+    }
+
+    if (!studentName.trim()) {
+      setError('이름을 입력해주세요.');
+      return;
+    }
+
+    handleJoinClass();
+  };
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
-      <div className='bg-white rounded-2xl p-6 w-full max-w-md'>
+    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+      <div className='bg-white rounded-2xl shadow-2xl w-full max-w-md'>
         {/* 헤더 */}
-        <div className='flex items-center justify-between mb-6'>
-          <h2 className='text-2xl font-bold text-gray-900'>수업 참여하기</h2>
-          <button
-            onClick={onClose}
-            className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* 안내 메시지 */}
-        <div className='bg-blue-50 p-4 rounded-lg mb-6'>
-          <p className='text-blue-800 text-sm'>
-            선생님이 알려준 6자리 수업 코드를 입력하면 바로 수업에 참여할 수
-            있어요!
-          </p>
+        <div className='p-6 border-b border-gray-200'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <h2 className='text-2xl font-bold text-gray-900'>수업 참여</h2>
+              <p className='text-gray-600 mt-1'>
+                수업 코드를 입력하여 참여하세요
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className='p-2 text-gray-400 hover:text-gray-600 transition-colors'
+            >
+              <X className='w-6 h-6' />
+            </button>
+          </div>
         </div>
 
         {/* 폼 */}
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* 수업 코드 */}
+        <form onSubmit={handleSubmit} className='p-6 space-y-6'>
+          {/* 수업 코드 입력 */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
               수업 코드
             </label>
             <div className='relative'>
-              <Hash
-                className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
-                size={16}
-              />
               <input
                 type='text'
-                name='classCode'
-                value={formData.classCode}
-                onChange={(e) => {
-                  const formatted = formatClassCode(e.target.value);
-                  setFormData((prev) => ({ ...prev, classCode: formatted }));
-                }}
-                placeholder='123456'
-                className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-center text-2xl font-mono tracking-widest'
+                value={classCode}
+                onChange={(e) => handleCodeChange(e.target.value)}
+                className='w-full px-4 py-3 text-center text-2xl font-mono font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors tracking-widest'
+                placeholder='000000'
                 maxLength={6}
-                pattern='[0-9]{6}'
-                required
               />
+              {isSearching && (
+                <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
+                  <div className='w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
+                </div>
+              )}
             </div>
             <p className='text-xs text-gray-500 mt-1'>
-              선생님이 알려준 6자리 숫자를 입력하세요
+              교사가 제공한 6자리 숫자 코드를 입력하세요
             </p>
           </div>
 
-          {/* 학생 이름 */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              이름
-            </label>
-            <div className='relative'>
-              <User
-                className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
-                size={16}
-              />
-              <input
-                type='text'
-                name='studentName'
-                value={formData.studentName}
-                onChange={handleInputChange}
-                placeholder='김학생'
-                className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500'
-                required
-              />
+          {/* 에러 메시지 */}
+          {error && (
+            <div className='flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg'>
+              <AlertCircle className='w-5 h-5 text-red-500 flex-shrink-0' />
+              <p className='text-red-700 text-sm'>{error}</p>
             </div>
-          </div>
+          )}
+
+          {/* 찾은 수업 정보 */}
+          {foundClass && (
+            <div className='p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+              <div className='flex items-start space-x-3'>
+                <div className='w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0'>
+                  <BookOpen className='w-6 h-6 text-white' />
+                </div>
+                <div className='flex-1'>
+                  <h3 className='font-semibold text-blue-900'>
+                    {foundClass.title}
+                  </h3>
+                  {foundClass.description && (
+                    <p className='text-blue-700 text-sm mt-1'>
+                      {foundClass.description}
+                    </p>
+                  )}
+                  <div className='flex items-center space-x-4 mt-2 text-xs text-blue-600'>
+                    <span>코드: {foundClass.class_code}</span>
+                    <span>•</span>
+                    <span>활성 상태</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 이름 입력 */}
+          {foundClass && (
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                이름
+              </label>
+              <div className='relative'>
+                <Users className='w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' />
+                <input
+                  type='text'
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+                  placeholder='이름을 입력하세요'
+                  maxLength={50}
+                />
+              </div>
+              <p className='text-xs text-gray-500 mt-1'>
+                수업에서 표시될 이름입니다
+              </p>
+            </div>
+          )}
 
           {/* 제출 버튼 */}
           <button
             type='submit'
-            disabled={loading || formData.classCode.length !== 6}
-            className='w-full py-3 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-lg font-semibold hover:from-pink-700 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all'
+            disabled={
+              isSearching || isJoining || (!!foundClass && !studentName.trim())
+            }
+            className='w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2'
           >
-            {loading ? '참여 중...' : '수업 참여하기'}
+            {isSearching ? (
+              <>
+                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                <span>수업 찾는 중...</span>
+              </>
+            ) : isJoining ? (
+              <>
+                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                <span>참여 중...</span>
+              </>
+            ) : foundClass ? (
+              <>
+                <span>수업 참여하기</span>
+                <ArrowRight className='w-4 h-4' />
+              </>
+            ) : (
+              <span>수업 찾기</span>
+            )}
           </button>
+
+          {/* 도움말 */}
+          <div className='bg-gray-50 p-4 rounded-lg'>
+            <h4 className='font-medium text-gray-900 mb-2'>
+              수업 코드를 받는 방법
+            </h4>
+            <ul className='text-sm text-gray-600 space-y-1'>
+              <li>• 담당 교사에게 6자리 수업 코드를 요청하세요</li>
+              <li>
+                • QR 코드를 스캔하거나 공유 링크를 통해 참여할 수 있습니다
+              </li>
+              <li>• 수업 코드는 숫자로만 구성되어 있습니다</li>
+            </ul>
+          </div>
         </form>
 
-        {/* 도움말 */}
-        <div className='mt-6 text-center'>
-          <p className='text-gray-500 text-sm'>
-            수업 코드를 모르시나요? 선생님께 문의해주세요.
+        {/* 푸터 */}
+        <div className='px-6 py-4 bg-gray-50 rounded-b-2xl'>
+          <p className='text-center text-xs text-gray-500'>
+            수업 참여에 문제가 있다면 담당 교사에게 문의하세요
           </p>
         </div>
       </div>
     </div>
   );
 };
+
+export default JoinClassModal;

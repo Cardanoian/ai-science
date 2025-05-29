@@ -1,17 +1,27 @@
-import { NoteModel } from '../models/NoteModel';
-import { Note, CreateNoteData, UpdateNoteData } from '../models/types';
+import { supabase } from '../lib/supabase';
+import type {
+  Note,
+  CreateNoteData,
+  UpdateNoteData,
+  NotePosition,
+} from '../models/types';
 import toast from 'react-hot-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export class NoteController {
-  private noteModel: NoteModel;
+  private realtimeSubscription: RealtimeChannel | null = null;
 
-  constructor() {
-    this.noteModel = new NoteModel();
-  }
-
+  // 보드별 노트 조회
   async getNotesByBoardId(boardId: string): Promise<Note[]> {
     try {
-      return await this.noteModel.getByBoardId(boardId);
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('board_id', boardId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Error fetching notes:', error);
       toast.error('노트를 불러오는데 실패했습니다.');
@@ -19,6 +29,7 @@ export class NoteController {
     }
   }
 
+  // 노트 생성
   async createNote(noteData: CreateNoteData): Promise<Note> {
     try {
       const validationErrors = this.validateNoteData(noteData);
@@ -26,14 +37,22 @@ export class NoteController {
         throw new Error(validationErrors.join(', '));
       }
 
-      const note = await this.noteModel.create({
-        ...noteData,
-        content: noteData.content.trim(),
-        author_name: noteData.author_name?.trim() || undefined,
-      });
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([
+          {
+            ...noteData,
+            content: noteData.content.trim(),
+            author_name: noteData.author_name?.trim() || null,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
 
       toast.success('노트가 생성되었습니다!');
-      return note;
+      return data;
     } catch (error) {
       console.error('Error creating note:', error);
       toast.error('노트 생성에 실패했습니다.');
@@ -41,6 +60,7 @@ export class NoteController {
     }
   }
 
+  // 노트 업데이트
   async updateNote(id: string, updates: UpdateNoteData): Promise<Note> {
     try {
       if (updates.content !== undefined) {
@@ -50,8 +70,18 @@ export class NoteController {
         }
       }
 
-      const note = await this.noteModel.update(id, updates);
-      return note;
+      const { data, error } = await supabase
+        .from('notes')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error updating note:', error);
       toast.error('노트 업데이트에 실패했습니다.');
@@ -59,9 +89,13 @@ export class NoteController {
     }
   }
 
+  // 노트 삭제
   async deleteNote(id: string): Promise<void> {
     try {
-      await this.noteModel.delete(id);
+      const { error } = await supabase.from('notes').delete().eq('id', id);
+
+      if (error) throw error;
+
       toast.success('노트가 삭제되었습니다!');
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -70,6 +104,7 @@ export class NoteController {
     }
   }
 
+  // 실시간 변경사항 구독
   subscribeToRealtimeChanges(
     boardId: string,
     callbacks: {
@@ -78,9 +113,62 @@ export class NoteController {
       onDelete: (noteId: string) => void;
     }
   ) {
-    return this.noteModel.subscribeToChanges(boardId, callbacks);
+    // 기존 구독 해제
+    if (this.realtimeSubscription) {
+      this.realtimeSubscription.unsubscribe();
+    }
+
+    // 새 구독 설정
+    this.realtimeSubscription = supabase
+      .channel('notes_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notes',
+          filter: `board_id=eq.${boardId}`,
+        },
+        (payload) => {
+          callbacks.onInsert(payload.new as Note);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notes',
+          filter: `board_id=eq.${boardId}`,
+        },
+        (payload) => {
+          callbacks.onUpdate(payload.new as Note);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notes',
+          filter: `board_id=eq.${boardId}`,
+        },
+        (payload) => {
+          callbacks.onDelete(payload.old.id);
+        }
+      )
+      .subscribe();
+
+    // 구독 해제 함수 반환
+    return () => {
+      if (this.realtimeSubscription) {
+        this.realtimeSubscription.unsubscribe();
+        this.realtimeSubscription = null;
+      }
+    };
   }
 
+  // 노트 데이터 유효성 검사
   validateNoteData(data: CreateNoteData): string[] {
     const errors: string[] = [];
 
@@ -107,11 +195,12 @@ export class NoteController {
     return errors;
   }
 
+  // 노트 위치 계산
   calculateNotePosition(
     clickX: number,
     clickY: number,
     containerRect: DOMRect
-  ): { x: number; y: number } {
+  ): NotePosition {
     const noteWidth = 256; // 16rem = 256px
     const noteHeight = 128; // 8rem = 128px
 
@@ -121,6 +210,7 @@ export class NoteController {
     return { x, y };
   }
 
+  // 랜덤 노트 색상 반환
   getRandomNoteColor(): string {
     const colors = [
       '#fbbf24', // yellow
@@ -133,6 +223,7 @@ export class NoteController {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  // 노트 생성 시간 포맷
   formatNoteDate(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
