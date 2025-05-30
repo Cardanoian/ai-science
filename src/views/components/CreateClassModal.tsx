@@ -6,7 +6,6 @@ import {
   Palette,
   Sparkles,
   Users,
-  Calendar,
   AlertCircle,
 } from 'lucide-react';
 import type {
@@ -316,10 +315,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     <Users className='w-3 h-3' />
                     <span>6자리 수업 코드 자동 생성</span>
                   </div>
-                  <div className='flex items-center space-x-2'>
-                    <Calendar className='w-3 h-3' />
-                    <span>학생 참여를 위한 QR 코드</span>
-                  </div>
+
                   <div className='flex items-center space-x-2'>
                     <BookOpen className='w-3 h-3' />
                     <span>실시간 협업 보드</span>

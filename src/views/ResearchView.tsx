@@ -539,16 +539,20 @@ const ResearchView: React.FC<ResearchViewProps> = ({
             </div>
           </div>
 
-          {/* AI 채팅 사이드바 */}
+          {/* AI 채팅 모달 */}
           {showAIChat && (
-            <div className='xl:col-span-1'>
-              <AIChat
-                messages={aiMessages}
-                onSendMessage={handleAIHelp}
-                onClose={() => setShowAIChat(false)}
-                currentStep={currentStep}
-                stepData={stepData[currentStep] || {}}
-              />
+            <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>
+              <div className='bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative'>
+                <div className='p-6'>
+                  <AIChat
+                    messages={aiMessages}
+                    onSendMessage={handleAIHelp}
+                    onClose={() => setShowAIChat(false)}
+                    currentStep={currentStep}
+                    stepData={stepData[currentStep] || {}}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

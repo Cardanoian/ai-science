@@ -2,7 +2,6 @@ import type {
   Board,
   CreateClassFormData,
   ClassStatistics,
-  ClassParticipant,
   Note,
   ResearchProject,
 } from './types';
@@ -142,28 +141,11 @@ export class BoardModel {
     return `${baseUrl}?join=${this.classCode}`;
   }
 
-  // QR 코드용 데이터 생성
-  getQRData(): string {
-    return JSON.stringify({
-      type: 'class_join',
-      code: this.classCode,
-      title: this.title,
-      teacher: this.teacherId,
-    });
-  }
-
-  // 수업 통계 계산 (참가자 및 활동 데이터 필요)
+  // 수업 통계 계산 (참가자 관련 로직 제거)
   calculateStatistics(
-    participants: ClassParticipant[],
     notes: Note[],
     projects: ResearchProject[]
   ): ClassStatistics {
-    const activeStudents = participants.filter(
-      (p) =>
-        // 최근 24시간 내 활동한 학생 (실제로는 더 정교한 로직 필요)
-        new Date(p.joined_at).getTime() > Date.now() - 24 * 60 * 60 * 1000
-    ).length;
-
     const completedProjects = projects.filter(
       (p) => p.current_step >= 6
     ).length;
@@ -175,8 +157,8 @@ export class BoardModel {
         : 0;
 
     return {
-      totalStudents: participants.length,
-      activeStudents,
+      totalStudents: 0,
+      activeStudents: 0,
       totalNotes: notes.length,
       researchProjects: projects.length,
       completedProjects,

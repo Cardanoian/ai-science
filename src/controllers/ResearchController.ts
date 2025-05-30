@@ -96,7 +96,7 @@ export class ResearchController {
         .select('*')
         .eq('project_id', projectId)
         .eq('step_number', stepNumber)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       return data;

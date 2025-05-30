@@ -19,7 +19,6 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
   const [studentName, setStudentName] = useState('');
   const [foundClass, setFoundClass] = useState<Board | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState('');
 
   // URL에서 수업 코드 추출
@@ -71,30 +70,6 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
     }
   };
 
-  // 수업 참여
-  const handleJoinClass = async () => {
-    if (!foundClass || !studentName.trim()) return;
-
-    try {
-      setIsJoining(true);
-      setError('');
-
-      const result = await classController.joinClass(
-        classCode,
-        studentName.trim()
-      );
-
-      if (result) {
-        onSuccess(result);
-      }
-    } catch (error) {
-      console.error('Failed to join class:', error);
-      setError('수업 참여 중 오류가 발생했습니다.');
-    } finally {
-      setIsJoining(false);
-    }
-  };
-
   // 폼 제출
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +88,8 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
       return;
     }
 
-    handleJoinClass();
+    // DB 등록 없이 바로 성공 처리
+    onSuccess(foundClass!);
   };
 
   return (
@@ -224,20 +200,13 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
           {/* 제출 버튼 */}
           <button
             type='submit'
-            disabled={
-              isSearching || isJoining || (!!foundClass && !studentName.trim())
-            }
+            disabled={isSearching || (!!foundClass && !studentName.trim())}
             className='w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2'
           >
             {isSearching ? (
               <>
                 <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
                 <span>수업 찾는 중...</span>
-              </>
-            ) : isJoining ? (
-              <>
-                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
-                <span>참여 중...</span>
               </>
             ) : foundClass ? (
               <>
@@ -256,9 +225,7 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
             </h4>
             <ul className='text-sm text-gray-600 space-y-1'>
               <li>• 담당 교사에게 6자리 수업 코드를 요청하세요</li>
-              <li>
-                • QR 코드를 스캔하거나 공유 링크를 통해 참여할 수 있습니다
-              </li>
+
               <li>• 수업 코드는 숫자로만 구성되어 있습니다</li>
             </ul>
           </div>

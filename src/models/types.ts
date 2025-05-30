@@ -59,14 +59,6 @@ export interface UpdateNoteData {
   author_name?: string;
 }
 
-export interface ClassParticipant {
-  id: string;
-  board_id: string;
-  user_id?: string;
-  student_name: string;
-  joined_at: string;
-}
-
 export interface ResearchProject {
   id: string;
   note_id: string;

@@ -159,6 +159,7 @@ const AIChat: React.FC<AIChatProps> = ({
           <button
             onClick={onClose}
             className='p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-white'
+            title='닫기'
           >
             <X className='w-5 h-5' />
           </button>

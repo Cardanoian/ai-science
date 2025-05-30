@@ -1,4 +1,3 @@
-// src/views/DashboardView.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Plus,
@@ -19,6 +18,7 @@ import {
 import type { AppController } from '../controllers/AppController';
 import type { AuthState } from '../controllers/AuthController';
 import type { Board } from '../models/types';
+import type { ClassController } from '../controllers/ClassController';
 import CreateClassModal from './components/CreateClassModal';
 
 interface DashboardViewProps {
@@ -41,7 +41,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalClasses: 0,
-    totalStudents: 0,
     activeProjects: 0,
     completedProjects: 0,
   });
@@ -59,7 +58,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         setClasses(classesData);
 
         // 통계 계산
-        let totalStudents = 0;
         let activeProjects = 0;
         let completedProjects = 0;
 
@@ -68,14 +66,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             await appController.classController.getClassStatistics(
               classData.id
             );
-          totalStudents += classStats.totalStudents;
           activeProjects += classStats.researchProjects;
           completedProjects += classStats.completedProjects;
         }
 
         setStats({
           totalClasses: classesData.length,
-          totalStudents,
           activeProjects,
           completedProjects,
         });
@@ -176,7 +172,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       <div className='container mx-auto px-4 py-8'>
         {/* 통계 카드 */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-8'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
             <div className='flex items-center justify-between'>
               <div>
@@ -187,20 +183,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div className='w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center'>
                 <BookOpen className='w-6 h-6 text-blue-600' />
-              </div>
-            </div>
-          </div>
-
-          <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-gray-600'>총 학생</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {stats.totalStudents}
-                </p>
-              </div>
-              <div className='w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center'>
-                <Users className='w-6 h-6 text-green-600' />
               </div>
             </div>
           </div>
@@ -333,7 +315,7 @@ interface ClassCardProps {
   class: Board;
   onEnter: () => void;
   onDelete: () => void;
-  classController: any;
+  classController: ClassController;
 }
 
 const ClassCard: React.FC<ClassCardProps> = ({
@@ -446,11 +428,6 @@ const ClassCard: React.FC<ClassCardProps> = ({
             <span className='font-mono font-bold text-blue-600'>
               {cls.class_code}
             </span>
-          </div>
-
-          <div className='flex items-center justify-between text-sm'>
-            <span className='text-gray-600'>참여 학생</span>
-            <span className='font-medium'>{stats.participants}명</span>
           </div>
 
           <div className='flex items-center justify-between text-sm'>

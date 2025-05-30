@@ -1,9 +1,9 @@
 // src/views/BoardView.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Users, Share2, Palette, Grid3X3, Zap } from 'lucide-react';
+import { ArrowLeft, Share2, Palette, Grid3X3, Zap } from 'lucide-react';
 import type { AppController } from '../controllers/AppController';
 import type { AuthState } from '../controllers/AuthController';
-import type { Board, Note, ClassParticipant } from '../models/types';
+import type { Board, Note } from '../models/types';
 import NoteCard from './components/NoteCard';
 
 interface BoardViewProps {
@@ -23,7 +23,6 @@ const BoardView: React.FC<BoardViewProps> = ({
   onNavigate,
 }) => {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [participants, setParticipants] = useState<ClassParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState('#fbbf24');
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -53,11 +52,6 @@ const BoardView: React.FC<BoardViewProps> = ({
           board.id
         );
         setNotes(notesData);
-
-        // 참가자 로드
-        const participantsData =
-          await appController.classController.getClassParticipants(board.id);
-        setParticipants(participantsData);
       } catch (error) {
         console.error('Failed to load board data:', error);
       } finally {
@@ -146,7 +140,7 @@ const BoardView: React.FC<BoardViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+      <div className='h-screen bg-gray-50 flex items-center justify-center'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4'></div>
           <p className='text-gray-600'>수업판을 불러오는 중...</p>
@@ -156,7 +150,7 @@ const BoardView: React.FC<BoardViewProps> = ({
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='flex flex-col h-screen bg-gray-50'>
       {/* 헤더 */}
       <header className='bg-white shadow-sm border-b sticky top-0 z-40'>
         <div className='container mx-auto px-4 py-4'>
@@ -181,7 +175,6 @@ const BoardView: React.FC<BoardViewProps> = ({
                       {board.class_code}
                     </code>
                   </span>
-                  <span>참여자: {participants.length}명</span>
                   <span>노트: {notes.length}개</span>
                 </div>
               </div>
@@ -249,30 +242,6 @@ const BoardView: React.FC<BoardViewProps> = ({
               >
                 <Share2 className='w-4 h-4 text-gray-600' />
               </button>
-
-              {/* 참가자 목록 */}
-              <div className='flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg'>
-                <Users className='w-4 h-4 text-gray-600' />
-                <span className='text-sm font-medium text-gray-700'>
-                  {participants.length}
-                </span>
-                <div className='flex -space-x-1'>
-                  {participants.slice(0, 3).map((participant) => (
-                    <div
-                      key={participant.id}
-                      className='w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white'
-                      title={participant.student_name}
-                    >
-                      {participant.student_name.charAt(0)}
-                    </div>
-                  ))}
-                  {participants.length > 3 && (
-                    <div className='w-6 h-6 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white'>
-                      +{participants.length - 3}
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -306,15 +275,12 @@ const BoardView: React.FC<BoardViewProps> = ({
       )}
 
       {/* 보드 영역 */}
-      <div
-        className='relative overflow-hidden'
-        style={{ minHeight: 'calc(100vh - 120px)' }}
-      >
+      <div className='flex-1 min-h-0 relative overflow-hidden'>
         <div
           ref={boardRef}
-          className={`relative w-full h-full min-h-screen ${
+          className={`relative w-full h-full min-h-full ${
             showGrid ? 'bg-grid-pattern' : ''
-          }`}
+          } overflow-y-auto`}
           style={{
             backgroundColor: board.background_color,
             backgroundImage: showGrid
@@ -352,7 +318,6 @@ const BoardView: React.FC<BoardViewProps> = ({
         <div className='container mx-auto flex items-center justify-between text-sm text-gray-600'>
           <div className='flex items-center space-x-6'>
             <span>총 {notes.length}개의 노트</span>
-            <span>활성 사용자: {participants.length}명</span>
             <span>
               진행 중인 탐구:{' '}
               {notes.filter((n) => n.content.includes('탐구')).length}개

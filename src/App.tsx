@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AppController } from './controllers/AppController';
 import type { AuthState } from './controllers/AuthController';
@@ -87,64 +87,73 @@ const App: React.FC = () => {
             setAppState((prev) => ({ ...prev, currentView: 'dashboard' }));
           }
         } else if (!newAuthState.isAuthenticated && !newAuthState.isLoading) {
-          setAppState((prev) => ({
-            ...prev,
-            currentView: 'welcome',
-            currentBoard: null,
-            currentNoteId: null,
-          }));
+          setAppState((prev) => {
+            if (
+              prev.currentView === 'board' ||
+              prev.currentView === 'research'
+            ) {
+              return prev;
+            }
+            return {
+              ...prev,
+              currentView: 'welcome',
+              currentBoard: null,
+              currentNoteId: null,
+            };
+          });
         }
       }
     );
 
     return unsubscribe;
-  }, [appController.authController, appState.currentView]);
+  }, [appController.authController]);
 
-  // 뷰 전환 핸들러들
+  // 뷰 전환 핸들러들 (useCallback으로 최신 상태 보장)
+
   const handleNavigate = {
-    toWelcome: () => {
+    toWelcome: useCallback(() => {
       setAppState((prev) => ({
         ...prev,
         currentView: 'welcome',
         currentBoard: null,
         currentNoteId: null,
       }));
-    },
+    }, []),
 
-    toDashboard: () => {
+    toDashboard: useCallback(() => {
       setAppState((prev) => ({ ...prev, currentView: 'dashboard' }));
-    },
+    }, []),
 
-    toBoard: (board: Board) => {
+    toBoard: useCallback((board: Board) => {
       setAppState((prev) => ({
         ...prev,
         currentView: 'board',
         currentBoard: board,
       }));
-    },
+    }, []),
 
-    toResearch: (board: Board, noteId: string) => {
+    toResearch: useCallback((board: Board, noteId: string) => {
       setAppState((prev) => ({
         ...prev,
         currentView: 'research',
         currentBoard: board,
         currentNoteId: noteId,
       }));
-    },
+    }, []),
 
-    back: () => {
-      if (appState.currentView === 'research') {
-        setAppState((prev) => ({ ...prev, currentView: 'board' }));
-      } else if (appState.currentView === 'board') {
-        setAppState((prev) => ({
-          ...prev,
-          currentView: 'dashboard',
-          currentBoard: null,
-        }));
-      } else {
-        setAppState((prev) => ({ ...prev, currentView: 'welcome' }));
-      }
-    },
+    back: useCallback(() => {
+      setAppState((prev) => {
+        if (prev.currentView === 'research') {
+          return { ...prev, currentView: 'board' };
+        } else if (prev.currentView === 'board') {
+          return authState.isAuthenticated && authState.profile
+            ? { ...prev, currentView: 'dashboard', currentBoard: null }
+            : { ...prev, currentView: 'welcome' };
+        } else {
+          return { ...prev, currentView: 'welcome' };
+        }
+      });
+    }, [authState.isAuthenticated, authState.profile]),
   };
 
   // 로딩 중이면 로딩 뷰 표시
