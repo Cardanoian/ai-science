@@ -187,7 +187,6 @@ export class BoardModel {
       },
       notes: notes.map((note) => ({
         content: note.content,
-        author: note.author_name,
         created: note.created_at,
         position: { x: note.x_position, y: note.y_position },
       })),

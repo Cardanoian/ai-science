@@ -1,5 +1,6 @@
 // src/components/CreateClassModal.tsx
 import React, { useState } from 'react';
+import { classColorPalette } from '../../constants/colorPalette';
 import {
   X,
   BookOpen,
@@ -34,18 +35,6 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // 배경색 팔레트
-  const colorPalette = [
-    { name: '파란색', value: '#3b82f6', preview: 'bg-blue-500' },
-    { name: '보라색', value: '#8b5cf6', preview: 'bg-purple-500' },
-    { name: '초록색', value: '#10b981', preview: 'bg-emerald-500' },
-    { name: '주황색', value: '#f59e0b', preview: 'bg-amber-500' },
-    { name: '분홍색', value: '#ec4899', preview: 'bg-pink-500' },
-    { name: '청록색', value: '#06b6d4', preview: 'bg-cyan-500' },
-    { name: '인디고', value: '#6366f1', preview: 'bg-indigo-500' },
-    { name: '회색', value: '#6b7280', preview: 'bg-gray-500' },
-  ];
 
   // 수업명 제안
   const titleSuggestions = [
@@ -121,7 +110,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   // 색상 선택된 것의 이름 찾기
   const getSelectedColorName = () => {
-    const selected = colorPalette.find(
+    const selected = classColorPalette.find(
       (color) => color.value === formData.background_color
     );
     return selected ? selected.name : '사용자 정의';
@@ -269,7 +258,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
             {/* 색상 팔레트 */}
             <div className='grid grid-cols-4 gap-3'>
-              {colorPalette.map((color) => (
+              {classColorPalette.map((color) => (
                 <button
                   key={color.value}
                   type='button'

@@ -17,7 +17,11 @@ import {
 } from 'lucide-react';
 import type { AppController } from '../controllers/AppController';
 import type { AuthState } from '../controllers/AuthController';
-import type { Board, ResearchProject } from '../models/types';
+import type {
+  Board,
+  ResearchProject,
+  ResearchStepContent,
+} from '../models/types';
 import ResearchSteps from './components/ResearchSteps';
 import AIChat from './components/AIChat';
 
@@ -87,7 +91,9 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 }) => {
   const [project, setProject] = useState<ResearchProject | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [stepData, setStepData] = useState<Record<number, object>>({});
+  const [stepData, setStepData] = useState<Record<number, ResearchStepContent>>(
+    {}
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -111,8 +117,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         if (!projectData) {
           projectData = await appController.researchController.createProject(
             noteId,
-            '나의 탐구 프로젝트',
-            authState.profile?.display_name || '탐구자'
+            '나의 탐구 프로젝트'
           );
         }
 
@@ -173,6 +178,23 @@ const ResearchView: React.FC<ResearchViewProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // 단계 변경 시 개별+전체 저장
+  const handleStepChange = async (newStep: number) => {
+    if (!project) return;
+    // 현재 단계 저장
+    await handleSaveStep(currentStep, stepData[currentStep] || {});
+    // 전체 단계 데이터 만들기 (빈 값은 null)
+    const allStepsData: Record<number, ResearchStepContent | null> = {};
+    for (let i = 1; i <= 6; i++) {
+      allStepsData[i] = stepData[i] || null;
+    }
+    await appController.researchController.saveAllStepsData(
+      project.id,
+      allStepsData
+    );
+    setCurrentStep(newStep);
   };
 
   // AI 도움 요청
@@ -337,8 +359,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   const isActive = currentStep === step.id;
                   const isCompleted = currentStep > step.id;
                   const hasData =
-                    stepData[step.id] &&
-                    Object.keys(stepData[step.id]).length > 0;
+                    Object.keys(stepData[step.id] || {}).length > 0;
 
                   return (
                     <button
@@ -456,7 +477,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   <div className='flex items-center space-x-2'>
                     <button
                       onClick={() =>
-                        setCurrentStep(Math.max(1, currentStep - 1))
+                        handleStepChange(Math.max(1, currentStep - 1))
                       }
                       disabled={currentStep === 1}
                       className='p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
@@ -465,7 +486,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     </button>
                     <button
                       onClick={() =>
-                        setCurrentStep(Math.min(6, currentStep + 1))
+                        handleStepChange(Math.min(6, currentStep + 1))
                       }
                       disabled={currentStep === 6}
                       className='p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
@@ -496,7 +517,9 @@ const ResearchView: React.FC<ResearchViewProps> = ({
               <div className='p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl'>
                 <div className='flex items-center justify-between'>
                   <button
-                    onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+                    onClick={() =>
+                      handleStepChange(Math.max(1, currentStep - 1))
+                    }
                     disabled={currentStep === 1}
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >
@@ -527,7 +550,9 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   </div>
 
                   <button
-                    onClick={() => setCurrentStep(Math.min(6, currentStep + 1))}
+                    onClick={() =>
+                      handleStepChange(Math.min(6, currentStep + 1))
+                    }
                     disabled={currentStep === 6}
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >

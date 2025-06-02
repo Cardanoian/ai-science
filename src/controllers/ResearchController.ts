@@ -32,8 +32,7 @@ export class ResearchController {
   // 프로젝트 생성
   async createProject(
     noteId: string,
-    title?: string,
-    studentName?: string
+    title?: string
   ): Promise<ResearchProject> {
     try {
       const { data, error } = await supabase
@@ -42,7 +41,6 @@ export class ResearchController {
           {
             note_id: noteId,
             title: title?.trim() || null,
-            student_name: studentName?.trim() || '익명',
             current_step: 1,
           },
         ])
@@ -116,36 +114,84 @@ export class ResearchController {
     try {
       const stepTitle = this.getStepTitle(stepNumber);
 
-      const { data, error } = await supabase
+      // 단계 데이터 존재 여부 확인 및 insert/update 분기 처리
+      let data: ResearchStep;
+      const existingResult = await supabase
         .from('research_steps')
-        .upsert(
-          {
-            project_id: projectId,
-            step_number: stepNumber,
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('step_number', stepNumber)
+        .maybeSingle();
+      if (existingResult.error) throw existingResult.error;
+      if (existingResult.data) {
+        const updateResult = await supabase
+          .from('research_steps')
+          .update({
             step_title: stepTitle,
             content,
             completed,
             updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'project_id,step_number',
-          }
-        )
-        .select()
-        .single();
-
-      if (error) throw error;
+          })
+          .eq('project_id', projectId)
+          .eq('step_number', stepNumber)
+          .select()
+          .single();
+        if (updateResult.error) throw updateResult.error;
+        data = updateResult.data;
+      } else {
+        const insertResult = await supabase
+          .from('research_steps')
+          .insert([
+            {
+              project_id: projectId,
+              step_number: stepNumber,
+              step_title: stepTitle,
+              content,
+              completed,
+              updated_at: new Date().toISOString(),
+            },
+          ])
+          .select()
+          .single();
+        if (insertResult.error) throw insertResult.error;
+        data = insertResult.data;
+      }
 
       // 현재 단계 업데이트
       await this.updateProject(projectId, {
         current_step: Math.max(stepNumber, 1),
       });
 
-      toast.success('단계 데이터가 저장되었습니다.');
+      // toast.success('단계 데이터가 저장되었습니다.');
       return data;
     } catch (error) {
       console.error('Error saving step data:', error);
       toast.error('데이터 저장에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  // 전체 단계 데이터 저장/업데이트
+  async saveAllStepsData(
+    projectId: string,
+    allContent: Record<number, ResearchStepContent | null>
+  ): Promise<ResearchProject> {
+    try {
+      const { data, error } = await supabase
+        .from('research_projects')
+        .update({
+          all_steps: allContent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId)
+        .select()
+        .single();
+      if (error) throw error;
+      // toast.success('전체 단계 데이터가 저장되었습니다.');
+      return data;
+    } catch (error) {
+      console.error('Error saving all steps data:', error);
+      toast.error('전체 단계 데이터 저장에 실패했습니다.');
       throw error;
     }
   }
@@ -230,7 +276,7 @@ export class ResearchController {
 
       if (error) throw error;
 
-      toast.success('실험 데이터가 저장되었습니다.');
+      // toast.success('실험 데이터가 저장되었습니다.');
       return result;
     } catch (error) {
       console.error('Error creating experiment data:', error);

@@ -43,7 +43,6 @@ export class NoteController {
           {
             ...noteData,
             content: noteData.content.trim(),
-            author_name: noteData.author_name?.trim() || null,
           },
         ])
         .select()
@@ -186,10 +185,6 @@ export class NoteController {
 
     if (data.x_position < 0 || data.y_position < 0) {
       errors.push('노트 위치는 음수일 수 없습니다.');
-    }
-
-    if (data.author_name && data.author_name.length > 100) {
-      errors.push('작성자 이름은 100자를 초과할 수 없습니다.');
     }
 
     return errors;

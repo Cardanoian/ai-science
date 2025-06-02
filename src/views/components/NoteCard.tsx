@@ -1,6 +1,7 @@
-// src/components/NoteCard.tsx
+import { useAppController } from '../../contexts/AppControllerContext';
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Edit3, Save, Palette, Move, Zap } from 'lucide-react';
+import { X, Edit3, Save, Palette, Move } from 'lucide-react';
+import { colorPalette } from '../../constants/colorPalette';
 import type { Note } from '../../models/types';
 
 interface NoteCardProps {
@@ -9,6 +10,7 @@ interface NoteCardProps {
   onDelete: (noteId: string) => void;
   onClick?: () => void;
   isReadOnly?: boolean;
+  teacherId: string;
 }
 
 const NoteCard: React.FC<NoteCardProps> = ({
@@ -17,7 +19,9 @@ const NoteCard: React.FC<NoteCardProps> = ({
   onDelete,
   onClick,
   isReadOnly = false,
+  teacherId,
 }) => {
+  const appController = useAppController();
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(note.content);
   const [isDragging, setIsDragging] = useState(false);
@@ -27,18 +31,6 @@ const NoteCard: React.FC<NoteCardProps> = ({
 
   const cardRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // 노트 색상 팔레트
-  const colorPalette = [
-    { name: '노란색', value: '#fbbf24' },
-    { name: '하늘색', value: '#60a5fa' },
-    { name: '연두색', value: '#34d399' },
-    { name: '분홍색', value: '#f472b6' },
-    { name: '보라색', value: '#a78bfa' },
-    { name: '주황색', value: '#fb923c' },
-    { name: '민트색', value: '#06d6a0' },
-    { name: '코랄색', value: '#ff6b6b' },
-  ];
 
   // 편집 모드 시작
   const handleEditStart = () => {
@@ -72,7 +64,9 @@ const NoteCard: React.FC<NoteCardProps> = ({
 
   // 드래그 시작
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isReadOnly || isEditing || e.target !== cardRef.current) return;
+    if (isReadOnly || isEditing) return;
+    e.preventDefault();
+    if (!cardRef.current) return;
 
     const rect = cardRef.current!.getBoundingClientRect();
     setDragOffset({
@@ -177,7 +171,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
   return (
     <div
       ref={cardRef}
-      className={`absolute w-64 min-h-32 p-4 rounded-xl shadow-lg border-2 transition-all duration-200 ${
+      className={`absolute w-64 min-h-32 p-4 rounded-xl shadow-lg border-2 select-none ${
         isDragging
           ? 'scale-105 shadow-2xl z-50 cursor-grabbing'
           : 'cursor-grab hover:shadow-xl'
@@ -203,21 +197,16 @@ const NoteCard: React.FC<NoteCardProps> = ({
             ? '#059669'
             : '#ef4444',
       }}
-      onMouseDown={handleMouseDown}
-      onClick={(e) => {
-        if (onClick && !isEditing && !isDragging) {
-          e.stopPropagation();
-          onClick();
-        }
+      onMouseDown={(e) => {
+        // 버튼 클릭 시 드래그 방지
+        if ((e.target as HTMLElement).closest('button')) return;
+        handleMouseDown(e);
       }}
     >
       {/* 헤더 */}
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center space-x-1'>
           {!isReadOnly && <Move className='w-3 h-3 text-gray-600 opacity-60' />}
-          <span className='text-xs text-gray-600 font-medium'>
-            {note.author_name || '익명'}
-          </span>
         </div>
 
         {!isReadOnly && (
@@ -251,7 +240,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
                 </button>
 
                 {showMenu && (
-                  <div className='absolute right-0 top-6 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10'>
+                  <div className='absolute right-0 top-6 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-30'>
                     <button
                       onClick={handleEditStart}
                       className='w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2'
@@ -266,14 +255,18 @@ const NoteCard: React.FC<NoteCardProps> = ({
                       <Palette className='w-3 h-3' />
                       <span>색상</span>
                     </button>
-                    <hr className='my-1' />
-                    <button
-                      onClick={handleDelete}
-                      className='w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2'
-                    >
-                      <X className='w-3 h-3' />
-                      <span>삭제</span>
-                    </button>
+                    {appController.authController.getUserId() == teacherId && (
+                      <>
+                        <hr className='my-1' />
+                        <button
+                          onClick={handleDelete}
+                          className='w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2'
+                        >
+                          <X className='w-3 h-3' />
+                          <span>삭제</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -290,12 +283,12 @@ const NoteCard: React.FC<NoteCardProps> = ({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            className='w-full h-20 p-2 text-sm bg-white bg-opacity-80 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='select-text w-full h-20 p-2 text-sm bg-white bg-opacity-80 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500'
             placeholder='노트 내용을 입력하세요...'
             maxLength={500}
           />
         ) : (
-          <div className='text-sm text-gray-800 whitespace-pre-wrap break-words'>
+          <div className='select-none text-sm text-gray-800 whitespace-pre-wrap break-words'>
             {note.content || (
               <span className='text-gray-500 italic'>
                 내용을 입력하려면 클릭하세요
@@ -306,14 +299,27 @@ const NoteCard: React.FC<NoteCardProps> = ({
       </div>
 
       {/* 푸터 */}
-      <div className='flex items-center justify-between text-xs text-gray-600'>
-        <span>{getTimeAgo()}</span>
-        {!isReadOnly && !note.content && (
-          <div className='flex items-center space-x-1 text-blue-600 animate-pulse'>
-            <Zap className='w-3 h-3' />
-            <span>클릭으로 탐구 시작</span>
-          </div>
-        )}
+
+      <div>
+        <div className='flex items-center justify-between text-xs text-gray-600'>
+          <span>{getTimeAgo()}</span>
+          {/* {!isReadOnly && !note.content && (
+            <div className='flex items-center space-x-1 text-blue-600 animate-pulse'>
+              <Zap className='w-3 h-3' />
+              <span>클릭으로 탐구 시작</span>
+            </div>
+          )} */}
+        </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+          className='mt-2 w-full py-1 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded transition-colors'
+        >
+          탐구하기
+        </button>
       </div>
 
       {/* 색상 피커 */}

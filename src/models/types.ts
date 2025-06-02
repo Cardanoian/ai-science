@@ -36,7 +36,6 @@ export interface Note {
   x_position: number;
   y_position: number;
   color: string;
-  author_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +47,6 @@ export interface CreateNoteData {
   x_position: number;
   y_position: number;
   color: string;
-  author_name?: string;
 }
 
 export interface UpdateNoteData {
@@ -56,7 +54,6 @@ export interface UpdateNoteData {
   x_position?: number;
   y_position?: number;
   color?: string;
-  author_name?: string;
 }
 
 export interface ResearchProject {
@@ -327,7 +324,6 @@ export interface Notification {
 // 노트 내보내기 데이터 타입
 export interface NoteExportData {
   content: string;
-  author?: string;
   created: string;
   position: NotePosition;
   color: string;

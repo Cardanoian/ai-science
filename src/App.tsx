@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { AppController } from './controllers/AppController';
+import { useAppController } from './contexts/AppControllerContext';
 import type { AuthState } from './controllers/AuthController';
 import type { Board } from './models/types';
 
@@ -20,7 +20,7 @@ interface AppState {
 }
 
 const App: React.FC = () => {
-  const [appController] = useState(() => new AppController());
+  const appController = useAppController();
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     profile: null,
@@ -185,8 +185,7 @@ const App: React.FC = () => {
       case 'board':
         return (
           <BoardView
-            appController={appController}
-            authState={authState}
+            // authState={authState}
             board={appState.currentBoard!}
             onNavigate={handleNavigate}
           />

@@ -1,6 +1,6 @@
 // src/components/JoinClassModal.tsx
-import React, { useState, useEffect } from 'react';
-import { X, Users, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
 import type { ClassController } from '../../controllers/ClassController';
 import type { Board } from '../../models/types';
 
@@ -16,10 +16,15 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
   classController,
 }) => {
   const [classCode, setClassCode] = useState('');
-  const [studentName, setStudentName] = useState('');
   const [foundClass, setFoundClass] = useState<Board | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // URL에서 수업 코드 추출
   useEffect(() => {
@@ -83,11 +88,6 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
       return;
     }
 
-    if (!studentName.trim()) {
-      setError('이름을 입력해주세요.');
-      return;
-    }
-
     // DB 등록 없이 바로 성공 처리
     onSuccess(foundClass!);
   };
@@ -122,6 +122,7 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
             </label>
             <div className='relative'>
               <input
+                ref={inputRef}
                 type='text'
                 value={classCode}
                 onChange={(e) => handleCodeChange(e.target.value)}
@@ -175,7 +176,7 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
           )}
 
           {/* 이름 입력 */}
-          {foundClass && (
+          {/* {foundClass && (
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
                 이름
@@ -195,12 +196,12 @@ const JoinClassModal: React.FC<JoinClassModalProps> = ({
                 수업에서 표시될 이름입니다
               </p>
             </div>
-          )}
+          )} */}
 
           {/* 제출 버튼 */}
           <button
             type='submit'
-            disabled={isSearching || (!!foundClass && !studentName.trim())}
+            disabled={isSearching}
             className='w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2'
           >
             {isSearching ? (

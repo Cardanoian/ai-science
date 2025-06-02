@@ -190,7 +190,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             <span>AI 기반 과학 탐구 학습 플랫폼</span>
           </div>
 
-          <h1 className='text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
+          <h1 className='text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
             🔬 AI와 함께하는
             <br />
             <span className='bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
@@ -198,7 +198,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             </span>
           </h1>
 
-          <p className='text-xl text-gray-600 mb-8 max-w-2xl mx-auto'>
+          <p className='text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto'>
             궁금한 것을 스스로 찾아보는 재미있는 여행을 시작해보세요!
             <br />
             6단계 체계적인 탐구 과정으로 진짜 과학자가 되어보아요.
@@ -238,7 +238,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             </p>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'>
             {RESEARCH_STEPS.map((step) => {
               const Icon = step.icon;
               return (
@@ -281,7 +281,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             </p>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-8'>
             {SCIENCE_TOPICS.map((topic) => (
               <div
                 key={topic.title}
@@ -325,7 +325,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
         </div>
 
         {/* 특징 소개 */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 mb-16'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-16'>
           <div className='text-center p-8'>
             <div className='w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4'>
               <Lightbulb className='w-8 h-8 text-blue-600' />
@@ -363,10 +363,10 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
         {/* CTA 섹션 */}
         <div className='bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-12 text-center text-white'>
-          <h2 className='text-3xl font-bold mb-4'>
+          <h2 className='text-2xl sm:text-3xl font-bold mb-4'>
             지금 바로 과학 탐구를 시작해보세요!
           </h2>
-          <p className='text-xl mb-8 opacity-90'>
+          <p className='text-lg sm:text-xl mb-8 opacity-90'>
             AI와 함께하는 체계적인 탐구 학습으로 진짜 과학자가 되어보아요
           </p>
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
@@ -405,7 +405,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               AI와 함께하는 자율시간 탐구학습 프로그램
             </p>
             <p className='text-sm text-gray-500'>
-              © 2024 Science Research Journey. All rights reserved.
+              © 2025 경상북도교육청 All rights reserved.
             </p>
           </div>
         </div>

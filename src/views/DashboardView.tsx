@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Users,
-  BarChart3,
+  // BarChart3,
   BookOpen,
   LogOut,
   Search,
   Filter,
   Calendar,
   Clock,
-  TrendingUp,
+  // TrendingUp,
   Copy,
   Share2,
   MoreVertical,
@@ -39,11 +39,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalClasses: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-  });
+  // const [stats, setStats] = useState({
+  //   totalClasses: 0,
+  //   activeProjects: 0,
+  //   completedProjects: 0,
+  // });
 
   // 수업 목록 로드
   useEffect(() => {
@@ -58,23 +58,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         setClasses(classesData);
 
         // 통계 계산
-        let activeProjects = 0;
-        let completedProjects = 0;
+        // let activeProjects = 0;
+        // let completedProjects = 0;
 
-        for (const classData of classesData) {
-          const classStats =
-            await appController.classController.getClassStatistics(
-              classData.id
-            );
-          activeProjects += classStats.researchProjects;
-          completedProjects += classStats.completedProjects;
-        }
+        // for (const classData of classesData) {
+        //   const classStats =
+        //     await appController.classController.getClassStatistics(
+        //       classData.id
+        //     );
+        //   activeProjects += classStats.researchProjects;
+        //   completedProjects += classStats.completedProjects;
+        // }
 
-        setStats({
-          totalClasses: classesData.length,
-          activeProjects,
-          completedProjects,
-        });
+        // setStats({
+        //   totalClasses: classesData.length,
+        //   activeProjects,
+        //   completedProjects,
+        // });
       } catch (error) {
         console.error('Failed to load classes:', error);
       } finally {
@@ -96,7 +96,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const handleCreateSuccess = (newClass: Board) => {
     setClasses((prev) => [newClass, ...prev]);
     setShowCreateModal(false);
-    setStats((prev) => ({ ...prev, totalClasses: prev.totalClasses + 1 }));
+    // setStats((prev) => ({ ...prev, totalClasses: prev.totalClasses + 1 }));
   };
 
   // 수업 삭제
@@ -106,7 +106,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     try {
       await appController.classController.deleteClass(classId);
       setClasses((prev) => prev.filter((cls) => cls.id !== classId));
-      setStats((prev) => ({ ...prev, totalClasses: prev.totalClasses - 1 }));
+      // setStats((prev) => ({ ...prev, totalClasses: prev.totalClasses - 1 }));
     } catch (error) {
       console.error('Failed to delete class:', error);
     }
@@ -155,7 +155,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               <div className='flex items-center space-x-2 text-gray-700'>
                 <Users className='w-4 h-4' />
                 <span className='font-medium'>
-                  {authState.profile?.display_name}
+                  {authState.profile?.display_name} 선생님
                 </span>
               </div>
               <button
@@ -170,9 +170,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </header>
 
-      <div className='container mx-auto px-4 py-8'>
+      <div className='container mx-auto px-4 sm:px-6 md:px-8 py-8'>
         {/* 통계 카드 */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        {/* <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8'>
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
             <div className='flex items-center justify-between'>
               <div>
@@ -216,7 +216,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* 수업 관리 섹션 */}
         <div className='bg-white rounded-xl shadow-sm border border-gray-100'>
@@ -281,7 +281,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 )}
               </div>
             ) : (
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
                 {filteredClasses.map((cls) => (
                   <ClassCard
                     key={cls.id}

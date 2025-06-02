@@ -44,10 +44,6 @@ export class NoteModel {
     return this.data.color;
   }
 
-  get authorName(): string | undefined {
-    return this.data.author_name;
-  }
-
   get createdAt(): Date {
     return new Date(this.data.created_at);
   }
@@ -259,18 +255,10 @@ export class NoteModel {
     }
   }
 
-  // 노트 작성자 정보 확인
-  isAuthor(authorName: string): boolean {
-    return this.authorName === authorName;
-  }
-
   // 노트 검색 (내용 기반)
   matches(searchTerm: string): boolean {
     const term = searchTerm.toLowerCase();
-    return (
-      this.content.toLowerCase().includes(term) ||
-      (this.authorName ? this.authorName.toLowerCase().includes(term) : false)
-    );
+    return this.content.toLowerCase().includes(term);
   }
 
   // 노트 색상 팔레트
@@ -321,7 +309,6 @@ export class NoteModel {
       x_position: newPosition?.x ?? this.position.x + 20,
       y_position: newPosition?.y ?? this.position.y + 20,
       color: this.color,
-      author_name: this.authorName,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -331,7 +318,6 @@ export class NoteModel {
   getExportData(): NoteExportData {
     return {
       content: this.content,
-      author: this.authorName,
       created: this.createdAt.toISOString(),
       position: this.position,
       color: this.color,
@@ -345,8 +331,6 @@ export class NoteModel {
 
   // 문자열 표현
   toString(): string {
-    return `Note(${this.id}): "${this.getPreviewText()}" by ${
-      this.authorName || 'Anonymous'
-    }`;
+    return `Note(${this.id}): "${this.getPreviewText()}"`;
   }
 }

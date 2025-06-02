@@ -32,6 +32,8 @@ export class AuthController {
     this.initializeAuth();
   }
 
+  public getUserId = () => this.currentState.user?.id;
+
   // 인증 상태 초기화
   private async initializeAuth() {
     try {

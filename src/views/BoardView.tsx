@@ -1,45 +1,30 @@
-// src/views/BoardView.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Share2, Palette, Grid3X3, Zap } from 'lucide-react';
-import type { AppController } from '../controllers/AppController';
-import type { AuthState } from '../controllers/AuthController';
+import { ArrowLeft, Share2, Palette, Grid3X3, Zap, Plus } from 'lucide-react';
+import { useAppController } from '../contexts/AppControllerContext';
 import type { Board, Note } from '../models/types';
+import { colorPalette } from '../constants/colorPalette';
 import NoteCard from './components/NoteCard';
+import CreateNoteModal from './components/CreateNoteModal';
+import type { AppController } from '../controllers';
 
 interface BoardViewProps {
-  appController: AppController;
-  authState: AuthState;
   board: Board;
   onNavigate: {
+    toWelcome: () => void;
     toDashboard: () => void;
     toResearch: (board: Board, noteId: string) => void;
   };
 }
 
-const BoardView: React.FC<BoardViewProps> = ({
-  appController,
-  authState,
-  board,
-  onNavigate,
-}) => {
+const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
+  const appController: AppController = useAppController();
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState('#fbbf24');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
-
-  // 노트 색상 팔레트
-  const colorPalette = [
-    { name: '노란색', value: '#fbbf24' },
-    { name: '하늘색', value: '#60a5fa' },
-    { name: '연두색', value: '#34d399' },
-    { name: '분홍색', value: '#f472b6' },
-    { name: '보라색', value: '#a78bfa' },
-    { name: '주황색', value: '#fb923c' },
-    { name: '민트색', value: '#06d6a0' },
-    { name: '코랄색', value: '#ff6b6b' },
-  ];
 
   // 데이터 로드
   useEffect(() => {
@@ -47,7 +32,7 @@ const BoardView: React.FC<BoardViewProps> = ({
       try {
         setIsLoading(true);
 
-        // 노트 로드
+        // 탐구 노트 로드
         const notesData = await appController.noteController.getNotesByBoardId(
           board.id
         );
@@ -62,7 +47,7 @@ const BoardView: React.FC<BoardViewProps> = ({
     loadBoardData();
   }, [appController, board.id]);
 
-  // 실시간 노트 변경 구독
+  // 실시간 탐구 노트 변경 구독
   useEffect(() => {
     const unsubscribe = appController.noteController.subscribeToRealtimeChanges(
       board.id,
@@ -82,12 +67,14 @@ const BoardView: React.FC<BoardViewProps> = ({
     return unsubscribe;
   }, [appController.noteController, board.id]);
 
-  // + 버튼 클릭으로 노트 생성
-  const handleCreateNote = async () => {
-    if (!boardRef.current) return;
+  // + 버튼 클릭으로 탐구 노트 생성
+  const handleCreateNote = () => {
+    setShowCreateModal(true);
+  };
 
+  const handleConfirmCreate = async (content: string, color: string) => {
+    if (!boardRef.current) return;
     const rect = boardRef.current.getBoundingClientRect();
-    // 중앙 좌표를 보드 내부 좌표계로 계산
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     const position = appController.noteController.calculateNotePosition(
@@ -95,22 +82,25 @@ const BoardView: React.FC<BoardViewProps> = ({
       centerY,
       rect
     );
-
     try {
       await appController.noteController.createNote({
         board_id: board.id,
-        content: '새 노트',
-        x_position: position.x,
-        y_position: position.y,
-        color: selectedColor,
-        author_name: authState.profile?.display_name || '익명',
+        content,
+        x_position: Math.round(position.x),
+        y_position: Math.round(position.y),
+        color,
       });
     } catch (error) {
       console.error('Failed to create note:', error);
     }
+    setShowCreateModal(false);
   };
 
-  // 노트 업데이트
+  const handleCancelCreate = () => {
+    setShowCreateModal(false);
+  };
+
+  // 탐구 노트 업데이트
   const handleNoteUpdate = async (noteId: string, updates: Partial<Note>) => {
     try {
       await appController.noteController.updateNote(noteId, updates);
@@ -119,10 +109,11 @@ const BoardView: React.FC<BoardViewProps> = ({
     }
   };
 
-  // 노트 삭제
+  // 탐구 노트 삭제
   const handleNoteDelete = async (noteId: string) => {
     try {
       await appController.noteController.deleteNote(noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (error) {
       console.error('Failed to delete note:', error);
     }
@@ -151,18 +142,34 @@ const BoardView: React.FC<BoardViewProps> = ({
 
   return (
     <div className='flex flex-col h-screen bg-gray-50'>
+      <CreateNoteModal
+        show={showCreateModal}
+        initialColor={selectedColor}
+        onCancel={handleCancelCreate}
+        onConfirm={handleConfirmCreate}
+      />
       {/* 헤더 */}
       <header className='bg-white shadow-sm border-b sticky top-0 z-40'>
-        <div className='container mx-auto px-4 py-4'>
+        <div className='container mx-auto px-4 sm:px-6 md:px-8 py-4'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center space-x-4'>
-              <button
-                onClick={onNavigate.toDashboard}
-                className='p-2 text-gray-600 hover:text-gray-800 transition-colors'
-                title='대시보드로 돌아가기'
-              >
-                <ArrowLeft className='w-5 h-5' />
-              </button>
+              {appController.authController.getUserId() ? (
+                <button
+                  onClick={onNavigate.toDashboard}
+                  className='p-2 text-gray-600 hover:text-gray-800 transition-colors'
+                  title='대시보드로 돌아가기'
+                >
+                  <ArrowLeft className='w-5 h-5' />
+                </button>
+              ) : (
+                <button
+                  onClick={onNavigate.toWelcome}
+                  className='p-2 text-gray-600 hover:text-gray-800 transition-colors'
+                  title='처음으로 돌아가기'
+                >
+                  <ArrowLeft className='w-5 h-5' />
+                </button>
+              )}
 
               <div>
                 <h1 className='text-xl font-bold text-gray-800'>
@@ -175,7 +182,7 @@ const BoardView: React.FC<BoardViewProps> = ({
                       {board.class_code}
                     </code>
                   </span>
-                  <span>노트: {notes.length}개</span>
+                  <span>탐구 : {notes.length}개</span>
                 </div>
               </div>
             </div>
@@ -198,8 +205,8 @@ const BoardView: React.FC<BoardViewProps> = ({
                 </button>
 
                 {showColorPicker && (
-                  <div className='absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10'>
-                    <div className='grid grid-cols-4 gap-2'>
+                  <div className='absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-56 z-10'>
+                    <div className='grid grid-cols-4 gap-3'>
                       {colorPalette.map((color) => (
                         <button
                           key={color.value}
@@ -207,7 +214,7 @@ const BoardView: React.FC<BoardViewProps> = ({
                             setSelectedColor(color.value);
                             setShowColorPicker(false);
                           }}
-                          className={`w-8 h-8 rounded border-2 transition-all ${
+                          className={`w-10 h-10 rounded border-2 transition-all ${
                             selectedColor === color.value
                               ? 'border-gray-800 scale-110'
                               : 'border-gray-300 hover:border-gray-500'
@@ -249,7 +256,7 @@ const BoardView: React.FC<BoardViewProps> = ({
 
       {/* 안내 메시지 */}
       {notes.length === 0 && (
-        <div className='container mx-auto px-4 py-8'>
+        <div className='container mx-auto px-4 sm:px-6 md:px-8 py-8'>
           <div className='bg-blue-50 border border-blue-200 rounded-xl p-8 text-center'>
             <Zap className='w-12 h-12 text-blue-500 mx-auto mb-4' />
             <h3 className='text-lg font-semibold text-blue-900 mb-2'>
@@ -263,7 +270,7 @@ const BoardView: React.FC<BoardViewProps> = ({
             <div className='flex items-center justify-center space-x-6 text-sm text-blue-600'>
               <div className='flex items-center space-x-2'>
                 <div className='w-3 h-3 bg-blue-500 rounded'></div>
-                <span>+ 버튼: 노트 생성</span>
+                <span>+ 버튼: 새 탐구 생성</span>
               </div>
               <div className='flex items-center space-x-2'>
                 <div className='w-3 h-3 bg-purple-500 rounded'></div>
@@ -289,7 +296,7 @@ const BoardView: React.FC<BoardViewProps> = ({
             backgroundSize: showGrid ? '20px 20px' : 'auto',
           }}
         >
-          {/* 노트들 */}
+          {/* 탐구 노트들 */}
           {notes.map((note) => (
             <NoteCard
               key={note.id}
@@ -298,24 +305,24 @@ const BoardView: React.FC<BoardViewProps> = ({
               onDelete={handleNoteDelete}
               onClick={() => handleNoteClick(note.id)}
               isReadOnly={false}
+              teacherId={board.teacher_id}
             />
           ))}
 
-          {/* 노트 생성 플로팅 버튼 */}
+          {/* 탐구 노트 생성 플로팅 버튼 */}
           <button
             onClick={handleCreateNote}
-            className='fixed bottom-10 right-10 z-50 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-4xl transition-all'
-            title='노트 생성'
-            style={{ boxShadow: '0 4px 24px rgba(59,130,246,0.2)' }}
+            className='fixed bottom-14 sm:bottom-18 right-6 sm:right-10 z-50 bg-gradient-to-br from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white rounded-full shadow-xl ring-4 ring-white w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center transition-transform transform hover:scale-110'
+            title='탐구 노트 생성'
           >
-            +
+            <Plus className='w-10 h-10' />
           </button>
         </div>
       </div>
 
       {/* 하단 정보 바 */}
-      <div className='bg-white border-t border-gray-200 px-4 py-2'>
-        <div className='container mx-auto flex items-center justify-between text-sm text-gray-600'>
+      <div className='bg-white border-t border-gray-200 px-4 sm:px-6 md:px-8 py-2'>
+        <div className='container mx-auto flex flex-col sm:flex-row items-center justify-between text-sm text-gray-600'>
           <div className='flex items-center space-x-6'>
             <span>총 {notes.length}개의 노트</span>
             <span>
