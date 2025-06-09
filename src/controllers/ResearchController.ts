@@ -124,6 +124,7 @@ export class ResearchController {
         .maybeSingle();
       if (existingResult.error) throw existingResult.error;
       if (existingResult.data) {
+        // 기존 데이터가 있을 때는 id로 update
         const updateResult = await supabase
           .from('research_steps')
           .update({
@@ -132,8 +133,7 @@ export class ResearchController {
             completed,
             updated_at: new Date().toISOString(),
           })
-          .eq('project_id', projectId)
-          .eq('step_number', stepNumber)
+          .eq('id', existingResult.data.id)
           .select()
           .single();
         if (updateResult.error) throw updateResult.error;
@@ -162,7 +162,30 @@ export class ResearchController {
         current_step: Math.max(stepNumber, 1),
       });
 
-      // toast.success('단계 데이터가 저장되었습니다.');
+      // 1단계 최종 탐구 주제 작성 시 노트 제목 업데이트
+      if (stepNumber === 1 && content.selectedTopic) {
+        try {
+          const { data: proj } = await supabase
+            .from('research_projects')
+            .select('note_id')
+            .eq('id', projectId)
+            .single();
+          const noteId = proj?.note_id;
+          if (noteId) {
+            await supabase
+              .from('notes')
+              .update({
+                content: content.selectedTopic,
+              })
+              .eq('id', noteId);
+          }
+        } catch (err) {
+          console.error(
+            'Error updating note content with selected topic:',
+            err
+          );
+        }
+      }
       return data;
     } catch (error) {
       console.error('Error saving step data:', error);
@@ -196,15 +219,20 @@ export class ResearchController {
     }
   }
 
-  // AI 피드백 생성
+  // AI 피드백 생성 (stepData를 context로 추가)
   async generateAIFeedback(
     question: string,
-    stepNumber: number
+    stepNumber: number,
+    stepData?: ResearchStepContent
   ): Promise<string> {
     try {
+      const contextText =
+        stepData && Object.keys(stepData).length > 0
+          ? `\n\n[학생이 입력한 자료]\n${JSON.stringify(stepData, null, 2)}`
+          : '';
       const response = await geminiAI.provideFeedback({
         step: stepNumber,
-        content: question,
+        content: question + contextText,
         studentLevel: '초등학교',
       });
 
@@ -394,26 +422,12 @@ export class ResearchController {
   }
 
   // 주제와 관련된 과학 개념 반환
-  getConceptsRelatedToTopic(topic: string): string[] {
-    const concepts: Record<string, string[]> = {
-      물: ['증발', '응결', '상태변화', '분자운동', '온도'],
-      식물: ['광합성', '증산작용', '발아', '생장', '호흡'],
-      자석: ['자기장', '극성', '자성체', '전자기력', '인력과 척력'],
-      소리: ['진동', '파동', '주파수', '진폭', '매질'],
-      빛: ['반사', '굴절', '분산', '흡수', '전자기파'],
-      온도: ['열전도', '대류', '복사', '열팽창', '분자운동'],
-      산성: ['pH', '이온', '중화반응', '지시약', '산과 염기'],
-      용해: ['용매', '용질', '용액', '농도', '포화도'],
-    };
-
-    const relatedConcepts: string[] = [];
-    Object.keys(concepts).forEach((key) => {
-      if (topic.toLowerCase().includes(key)) {
-        relatedConcepts.push(...concepts[key]);
-      }
+  async getConceptsRelatedToTopic(topic: string): Promise<string[]> {
+    const { concepts } = await geminiAI.fetchConcepts({
+      topic,
+      studentLevel: '초등학교',
     });
-
-    return [...new Set(relatedConcepts)]; // 중복 제거
+    return concepts;
   }
 
   // CSV 데이터 내보내기

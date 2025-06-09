@@ -24,6 +24,7 @@ import type {
 } from '../models/types';
 import ResearchSteps from './components/ResearchSteps';
 import AIChat from './components/AIChat';
+import { supabase } from '../lib/supabase';
 
 interface ResearchViewProps {
   appController: AppController;
@@ -124,6 +125,34 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         setProject(projectData);
         setCurrentStep(projectData.current_step);
 
+        // AI 채팅 메시지 불러오기
+        try {
+          type AIChatMessageRow = {
+            type: 'user' | 'ai';
+            content: string;
+            created_at: string;
+          };
+          const { data: chatData, error: chatError } = await supabase
+            .from('ai_chat_messages')
+            .select('type, content, created_at')
+            .eq('research_id', projectData.id)
+            .order('created_at', { ascending: true });
+
+          if (chatError) {
+            console.error('AI 채팅 메시지 불러오기 실패:', chatError);
+          } else if (chatData) {
+            setAiMessages(
+              (chatData as AIChatMessageRow[]).map((msg) => ({
+                type: msg.type,
+                content: msg.content,
+                timestamp: new Date(msg.created_at),
+              }))
+            );
+          }
+        } catch (e) {
+          console.error('AI 채팅 메시지 불러오기 오류:', e);
+        }
+
         // 각 단계 데이터 로드
         const allStepData: Record<number, object> = {};
         for (let i = 1; i <= 6; i++) {
@@ -197,36 +226,74 @@ const ResearchView: React.FC<ResearchViewProps> = ({
     setCurrentStep(newStep);
   };
 
-  // AI 도움 요청
+  // AI 도움 요청 (현재 단계 입력 데이터도 함께 전달)
+  const [isAIRequesting, setIsAIRequesting] = useState(false);
+
   const handleAIHelp = async (question: string) => {
+    if (isAIRequesting) return;
+
+    if (!project) {
+      return;
+    }
     try {
+      setIsAIRequesting(true);
+      const now = new Date();
+
       // 사용자 메시지 추가
       const userMessage = {
         type: 'user' as const,
         content: question,
-        timestamp: new Date(),
+        timestamp: now,
       };
       setAiMessages((prev) => [...prev, userMessage]);
+      // supabase에 사용자 메시지 저장
+      await supabase.from('ai_chat_messages').insert([
+        {
+          research_id: project.id,
+          type: 'user',
+          content: question,
+          step: currentStep,
+          created_at: now.toISOString(),
+        },
+      ]);
 
-      // AI 응답 요청
+      // AI 응답 요청 (현재 단계 입력 데이터도 함께 전달)
       const response =
         await appController.researchController.generateAIFeedback(
           question,
-          currentStep
+          currentStep,
+          stepData[currentStep] || {}
         );
+
+      const aiNow = new Date();
 
       // AI 응답 추가
       const aiMessage = {
         type: 'ai' as const,
         content: response,
-        timestamp: new Date(),
+        timestamp: aiNow,
       };
       setAiMessages((prev) => [...prev, aiMessage]);
+
+      // supabase에 AI 메시지 저장
+      if (project) {
+        await supabase.from('ai_chat_messages').insert([
+          {
+            research_id: project.id,
+            type: 'ai',
+            content: response,
+            step: currentStep,
+            created_at: aiNow.toISOString(),
+          },
+        ]);
+      }
 
       // AI 채팅 패널 표시
       setShowAIChat(true);
     } catch (error) {
       console.error('Failed to get AI help:', error);
+    } finally {
+      setIsAIRequesting(false);
     }
   };
 
@@ -542,10 +609,17 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       onClick={() =>
                         handleAIHelp('현재 단계에 대한 도움을 받고 싶어요')
                       }
-                      className='px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-colors flex items-center space-x-2'
+                      disabled={isAIRequesting}
+                      className={`px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-colors flex items-center space-x-2 ${
+                        isAIRequesting
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:from-blue-600 hover:to-purple-700'
+                      }`}
                     >
                       <Sparkles className='w-4 h-4' />
-                      <span>AI 도움 받기</span>
+                      <span>
+                        {isAIRequesting ? 'AI 응답 대기 중...' : 'AI 도움 받기'}
+                      </span>
                     </button>
                   </div>
 

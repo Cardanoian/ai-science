@@ -356,7 +356,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           <>
             <div>
               <label className='block font-medium text-gray-700 mb-2'>
-                X축 라벨
+                가로축 라벨
               </label>
               <input
                 type='text'
@@ -369,7 +369,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
 
             <div>
               <label className='block font-medium text-gray-700 mb-2'>
-                Y축 라벨
+                세로축 라벨
               </label>
               <input
                 type='text'
@@ -390,8 +390,10 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
         </label>
         <div className='space-y-3'>
           <div className='grid grid-cols-2 gap-4 font-medium text-sm text-gray-600'>
-            <div>{chartType === 'pie' ? '항목' : xAxisLabel || 'X값'}</div>
-            <div>{chartType === 'pie' ? '값' : yAxisLabel || 'Y값'}</div>
+            <div>
+              {chartType === 'pie' ? '항목' : xAxisLabel || '가로 수치'}
+            </div>
+            <div>{chartType === 'pie' ? '값' : yAxisLabel || '세로 수치'}</div>
           </div>
 
           {dataPoints.map((point, index) => (

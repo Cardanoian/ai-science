@@ -1,4 +1,3 @@
-// src/services/GeminiAIService.ts
 import { GoogleGenAI } from '@google/genai';
 
 // AI 응답 타입 정의
@@ -33,6 +32,11 @@ export interface ExperimentPlan {
     controlled: string[];
   };
   safety: string[];
+}
+
+// 주제 관련 과학 개념 응답 타입
+export interface ConceptResponse extends AIResponse {
+  concepts: string[];
 }
 
 export class GeminiAIService {
@@ -89,16 +93,56 @@ export class GeminiAIService {
         contents: prompt,
         config: { maxOutputTokens: 1000, temperature: 0.7 },
       });
-      // TODO: console.log 지우기
-      console.log(response);
-
       const content = response.text ?? '';
       const topics = JSON.parse(content);
-
       return topics;
     } catch (error) {
       console.error('주제 추천 중 오류:', error);
       return this.getFallbackTopics();
+    }
+  }
+
+  /**
+   * 주제와 관련된 개념을 AI로부터 추천
+   */
+  async fetchConcepts(params: {
+    topic: string;
+    studentLevel: string;
+  }): Promise<ConceptResponse> {
+    try {
+      const { topic, studentLevel } = params;
+      const prompt = `
+당신은 과학 교육 전문가입니다. ${studentLevel} 학생이 "${topic}" 주제를 이해할 수 있도록 관련된 과학 개념 5개를 제시해주세요.
+
+[응답 형식]
+1. 개념1
+2. 개념2
+3. 개념3
+4. 개념4
+5. 개념5
+
+개념 5가지는 제시하지만, 그 외 안내 멘트나 메타 지시사항 등 다른 텍스트는 절대 포함하지 마세요.
+`;
+      const response = await this.client.models.generateContent({
+        model: this.model,
+        contents: prompt,
+        config: { maxOutputTokens: 300, temperature: 0.6 },
+      });
+      const text = response.text ?? '';
+      const parsed = text.split(',').map((item) => item.trim());
+      if (parsed && Array.isArray(parsed)) {
+        return { content: text, concepts: parsed, success: true };
+      }
+      throw new Error('형식 오류');
+    } catch (error) {
+      console.error('개념 추천 중 오류:', error);
+      const fallback = this.getFallbackConcepts(params.topic);
+      return {
+        content: '',
+        concepts: fallback,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
@@ -134,16 +178,14 @@ export class GeminiAIService {
 - 학생의 노력을 인정
 - 구체적이고 실행 가능한 조언
 - 과학적 사고 과정 강조
-(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
+
+대답은 마크다운 형식 말고 일반 텍스트로 해주세요.
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          maxOutputTokens: 500,
-          temperature: 0.6,
-        },
+        config: { maxOutputTokens: 500, temperature: 0.6 },
       });
 
       return {
@@ -175,37 +217,30 @@ export class GeminiAIService {
 탐구 주제: ${topic}
 탐구 질문: ${question}
 
-다음 JSON 형식으로 실험 계획을 제공해주세요:
-{
-  "title": "실험 제목",
-  "hypothesis": "가설 (만약 ~라면, ~할 것이다)",
-  "materials": ["재료1", "재료2", "재료3"],
-  "procedure": ["단계1", "단계2", "단계3"],
-  "variables": {
-    "independent": "독립변인",
-    "dependent": "종속변인", 
-    "controlled": ["통제변인1", "통제변인2"]
-  },
-  "safety": ["안전수칙1", "안전수칙2"]
-}
+[응답형식]
+1. 실험제목: {해당 실험의 제목}
+2. 가설: {만약 ~라면, ~할 것이다}
+3. 재료: 재료1, 재료2, 재료3
+4. 단계:  단계1, 단계2, 단계3, ...
+5. 변인: 
+  독립변인: {해당 실험의 독립변인}
+  종속변인: {해당 실험의 종속변인}
+  통제변인: 통제변인1, 통제변인2, ...
+},
+안전수칙: 안전수칙1, 안전수칙2, ...
 
-조건:
+[조건]
 - 초등학생이 안전하게 수행 가능
 - 일상적인 재료 사용
 - 명확한 변인 구분
 - 구체적인 실험 절차
-(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          maxOutputTokens: 800,
-          temperature: 0.5,
-        },
+        config: { maxOutputTokens: 800, temperature: 0.5 },
       });
-
       const content = response.text ?? '';
       return JSON.parse(content);
     } catch (error) {
@@ -243,10 +278,7 @@ export class GeminiAIService {
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          maxOutputTokens: 1000,
-          temperature: 0.7,
-        },
+        config: { maxOutputTokens: 1000, temperature: 0.7 },
       });
 
       return {
@@ -285,10 +317,7 @@ export class GeminiAIService {
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          maxOutputTokens: 400,
-          temperature: 0.6,
-        },
+        config: { maxOutputTokens: 400, temperature: 0.6 },
       });
 
       return {
@@ -328,10 +357,7 @@ export class GeminiAIService {
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          maxOutputTokens: 600,
-          temperature: 0.5,
-        },
+        config: { maxOutputTokens: 600, temperature: 0.5 },
       });
 
       return {
@@ -346,6 +372,29 @@ export class GeminiAIService {
         error: error instanceof Error ? error.message : '알 수 없는 오류',
       };
     }
+  }
+
+  /**
+   * 주제 관련 개념 폴백 매핑
+   */
+  private getFallbackConcepts(topic: string): string[] {
+    const conceptsMap: Record<string, string[]> = {
+      물: ['증발', '응결', '상태변화', '분자운동', '온도'],
+      식물: ['광합성', '증산작용', '발아', '생장', '호흡'],
+      자석: ['자기장', '극성', '자성체', '전자기력', '인력과 척력'],
+      소리: ['진동', '파동', '주파수', '진폭', '매질'],
+      빛: ['반사', '굴절', '분산', '흡수', '전자기파'],
+      온도: ['열전도', '대류', '복사', '열팽창', '분자운동'],
+      산성: ['pH', '이온', '중화반응', '지시약', '산과 염기'],
+      용해: ['용매', '용질', '용액', '농도', '포화도'],
+    };
+    const related: string[] = [];
+    Object.keys(conceptsMap).forEach((key) => {
+      if (topic.toLowerCase().includes(key)) {
+        related.push(...conceptsMap[key]);
+      }
+    });
+    return Array.from(new Set(related));
   }
 
   /**
