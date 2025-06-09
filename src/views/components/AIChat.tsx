@@ -22,7 +22,10 @@ interface Message {
 
 interface AIChatProps {
   messages: Message[];
-  onSendMessage: (message: string, context?: ResearchStepContent) => void;
+  onSendMessage: (
+    message: string,
+    context?: ResearchStepContent
+  ) => Promise<void>;
   onClose: () => void;
   currentStep: number;
   stepData: ResearchStepContent;
