@@ -1,20 +1,19 @@
-// src/components/research-steps/Step5Component.tsx
 import React from 'react';
 import { Presentation, Bot, Download } from 'lucide-react';
 
-interface LocalData {
+interface Step5LocalData {
   presentationTitle?: string;
   presentationSlides?: { [key: string]: string };
   presentationScript?: string;
 }
 
 interface Step5ComponentProps {
-  localData: LocalData;
+  localData: Step5LocalData;
   onDataChange: (
-    key: string,
-    value: string | { [key: string]: string }
+    key: keyof Step5LocalData,
+    value: Step5LocalData[keyof Step5LocalData]
   ) => void;
-  onAIHelp: (question: string, context?: LocalData) => void;
+  onAIHelp: (question: string, context?: Step5LocalData) => void;
 }
 
 const Step5Component: React.FC<Step5ComponentProps> = ({

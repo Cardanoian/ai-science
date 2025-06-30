@@ -1,4 +1,3 @@
-// src/components/index.ts
 export { default as LoginModal } from './LoginModal';
 export { default as JoinClassModal } from './JoinClassModal';
 export { default as CreateClassModal } from './CreateClassModal';

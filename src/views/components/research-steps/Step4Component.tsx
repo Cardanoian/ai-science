@@ -1,8 +1,15 @@
-// src/components/research-steps/Step4Component.tsx
 import React from 'react';
 import { BarChart3, Bot } from 'lucide-react';
 import ChartGenerator from '../ChartGenerator';
-import type { Step4LocalData } from '../../../models/types';
+import type { ChartData } from '../../../models/types';
+
+export interface Step4LocalData {
+  experimentResults: string;
+  chartData?: ChartData;
+  hypothesisResult: string;
+  hypothesisExplanation: string;
+  conclusion: string;
+}
 
 interface Step4ComponentProps {
   localData: Step4LocalData;

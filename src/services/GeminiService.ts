@@ -44,7 +44,7 @@ export class GeminiAIService {
   private model: string = 'gemini-2.5-flash';
 
   constructor() {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     if (!apiKey) {
       throw new Error('Gemini API 키가 설정되지 않았습니다.');
     }

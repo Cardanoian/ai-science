@@ -1,4 +1,3 @@
-// src/components/AIChat.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   X,

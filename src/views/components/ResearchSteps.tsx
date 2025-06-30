@@ -1,4 +1,3 @@
-// src/components/ResearchSteps.tsx
 import React, { useState, useEffect } from 'react';
 import type { ResearchController } from '../../controllers/ResearchController';
 

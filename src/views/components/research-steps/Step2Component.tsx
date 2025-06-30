@@ -1,4 +1,3 @@
-// src/components/research-steps/Step2Component.tsx
 import React from 'react';
 import { Lightbulb, Plus, Trash2, Bot } from 'lucide-react';
 

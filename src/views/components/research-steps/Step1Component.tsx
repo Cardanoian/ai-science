@@ -1,4 +1,3 @@
-// src/components/research-steps/Step1Component.tsx
 import React, { useState } from 'react';
 import { Search, Plus, Trash2, Sparkles, Bot } from 'lucide-react';
 import type { ResearchController } from '../../../controllers/ResearchController';

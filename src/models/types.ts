@@ -222,15 +222,6 @@ export interface ChartConfig {
   data: ChartDataPoint[];
 }
 
-// Step4Component의 localData 타입
-export interface Step4LocalData {
-  experimentResults: string;
-  chartData?: ChartData;
-  hypothesisResult: string;
-  hypothesisExplanation: string;
-  conclusion: string;
-}
-
 export interface ResearchTopicRecommendation {
   title: string;
   description: string;

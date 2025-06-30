@@ -1,4 +1,3 @@
-// src/components/JoinClassModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { X, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
 import type { ClassController } from '../../controllers/ClassController';

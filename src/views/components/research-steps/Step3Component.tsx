@@ -1,4 +1,3 @@
-// src/components/research-steps/Step3Component.tsx
 import React from 'react';
 import { FlaskConical, Plus, Trash2, Bot } from 'lucide-react';
 

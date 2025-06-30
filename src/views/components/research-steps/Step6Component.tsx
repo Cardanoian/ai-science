@@ -1,4 +1,3 @@
-// src/components/research-steps/Step6Component.tsx
 import React from 'react';
 import { Heart, Bot, Save } from 'lucide-react';
 

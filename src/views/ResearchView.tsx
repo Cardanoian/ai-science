@@ -1,4 +1,3 @@
-// src/views/ResearchView.tsx
 import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
@@ -591,7 +590,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >
                     <ChevronLeft className='w-4 h-4' />
-                    <span>이전 단계</span>
+                    <span>이전</span>
                   </button>
 
                   <div className='flex items-center space-x-3'>
@@ -602,7 +601,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       disabled={isSaving}
                       className='px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50'
                     >
-                      {isSaving ? '저장 중...' : '임시저장'}
+                      {isSaving ? '저장 중...' : '저장'}
                     </button>
 
                     <button
@@ -630,7 +629,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     disabled={currentStep === 6}
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >
-                    <span>다음 단계</span>
+                    <span>다음</span>
                     <ChevronRight className='w-4 h-4' />
                   </button>
                 </div>

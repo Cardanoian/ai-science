@@ -1,4 +1,3 @@
-// src/components/CreateClassModal.tsx
 import React, { useState } from 'react';
 import { classColorPalette } from '../../constants/colorPalette';
 import {
