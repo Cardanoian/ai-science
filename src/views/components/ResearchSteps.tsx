@@ -17,6 +17,8 @@ interface ResearchStepsProps {
   onDataChange: (data: Partial<ResearchStepContent>) => void;
   onSave: (data: Partial<ResearchStepContent>, completed?: boolean) => void;
   onAIHelp: (question: string, context?: Partial<ResearchStepContent>) => void;
+  onGeneratePresentation: () => void; // 추가
+  onViewPresentation: () => void; // 추가
   researchController: ResearchController;
 }
 
@@ -26,6 +28,8 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
   onDataChange,
   onSave,
   onAIHelp,
+  onGeneratePresentation, // 추가
+  onViewPresentation, // 추가
   researchController,
 }) => {
   const [localData, setLocalData] = useState(stepData);
@@ -72,6 +76,8 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
     onUpdateItem: handleUpdateItem,
     onAIHelp,
     onSave,
+    onGeneratePresentation, // 추가
+    onViewPresentation, // 추가
     researchController,
   };
 

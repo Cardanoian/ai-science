@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Save,
-  Download,
+  // Download,
   Bot,
   Sparkles,
 } from 'lucide-react';
@@ -20,10 +20,13 @@ import type {
   Board,
   ResearchProject,
   ResearchStepContent,
+  ResearchStep,
 } from '../models/types';
 import ResearchSteps from './components/ResearchSteps';
 import AIChat from './components/AIChat';
 import { supabase } from '../lib/supabase';
+import PresentationModal from './components/PresentationModal';
+import toast from 'react-hot-toast';
 
 interface ResearchViewProps {
   appController: AppController;
@@ -104,6 +107,8 @@ const ResearchView: React.FC<ResearchViewProps> = ({
       timestamp: Date;
     }>
   >([]);
+  const [showPresentationModal, setShowPresentationModal] = useState(false); // 추가: 프레젠테이션 모달 상태
+  const [presentationHtml, setPresentationHtml] = useState<string | null>(null); // 추가: 프레젠테이션 HTML 내용
 
   // 프로젝트 초기화 및 로드
   useEffect(() => {
@@ -155,10 +160,11 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         // 각 단계 데이터 로드
         const allStepData: Record<number, object> = {};
         for (let i = 1; i <= 6; i++) {
-          const stepInfo = await appController.researchController.getStepData(
-            projectData.id,
-            i
-          );
+          const stepInfo: ResearchStep | null =
+            await appController.researchController.getStepData(
+              projectData.id,
+              i
+            );
           if (stepInfo) {
             allStepData[i] = stepInfo.content;
           }
@@ -303,31 +309,89 @@ const ResearchView: React.FC<ResearchViewProps> = ({
   };
 
   // 프로젝트 내보내기
-  const handleExport = async () => {
+  // const handleExport = async () => {
+  //   if (!project) return;
+
+  //   try {
+  //     const exportData = {
+  //       project,
+  //       steps: stepData,
+  //       timestamp: new Date().toISOString(),
+  //     };
+
+  //     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+  //       type: 'application/json',
+  //     });
+
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement('a');
+  //     link.href = url;
+  //     link.download = `${project.title || '탐구프로젝트'}_${
+  //       new Date().toISOString().split('T')[0]
+  //     }.json`;
+  //     link.click();
+
+  //     URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error('Failed to export project:', error);
+  //   }
+  // };
+
+  // 발표자료 생성
+  const handleGeneratePresentation = async () => {
     if (!project) return;
 
     try {
-      const exportData = {
-        project,
-        steps: stepData,
-        timestamp: new Date().toISOString(),
+      setIsAIRequesting(true); // AI 요청 중임을 표시
+      toast.loading('발표자료를 생성 중입니다...');
+
+      // Step1부터 Step5까지의 데이터를 조합
+      const combinedProjectData = {
+        step1: stepData[1] || {},
+        step2: stepData[2] || {},
+        step3: stepData[3] || {},
+        step4: stepData[4] || {},
+        step5: stepData[5] || {},
+        projectTitle: project.title || '나의 탐구 프로젝트',
       };
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json',
-      });
+      const generatedHtml =
+        await appController.researchController.generateHtmlPresentation(
+          combinedProjectData
+        );
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${project.title || '탐구프로젝트'}_${
-        new Date().toISOString().split('T')[0]
-      }.json`;
-      link.click();
+      if (generatedHtml) {
+        // Step5 데이터에 HTML 저장
+        const updatedStep5Data = {
+          ...(stepData[5] || {}),
+          generatedPresentationHtml: generatedHtml,
+        };
+        setStepData((prev) => ({ ...prev, [5]: updatedStep5Data }));
+        await handleSaveStep(5, updatedStep5Data); // Supabase에 저장
 
-      URL.revokeObjectURL(url);
+        setPresentationHtml(generatedHtml);
+        setShowPresentationModal(true); // 모달 표시
+        toast.success('발표자료가 성공적으로 생성되었습니다!');
+      } else {
+        toast.error('발표자료 생성에 실패했습니다.');
+      }
     } catch (error) {
-      console.error('Failed to export project:', error);
+      console.error('발표자료 생성 중 오류:', error);
+      toast.error('발표자료 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsAIRequesting(false);
+    }
+  };
+
+  // 발표자료 보기
+  const handleViewPresentation = () => {
+    const htmlContent = (stepData[5] as ResearchStepContent)
+      ?.generatedPresentationHtml;
+    if (htmlContent) {
+      setPresentationHtml(htmlContent);
+      setShowPresentationModal(true);
+    } else {
+      toast.error('생성된 발표자료가 없습니다.');
     }
   };
 
@@ -362,7 +426,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   {project?.title || '나의 탐구 프로젝트'}
                 </h1>
                 <div className='flex items-center space-x-4 text-sm text-gray-600'>
-                  <span>탐구자: {project?.student_name}</span>
+                  {/* <span>탐구자: {project?.student_name}</span> */}
                   <span>진행률: {calculateProgress()}%</span>
                   <span>현재 단계: {currentStep}/6</span>
                 </div>
@@ -378,16 +442,18 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                 className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 disabled:opacity-50'
               >
                 <Save className='w-4 h-4' />
-                <span>{isSaving ? '저장 중...' : '저장'}</span>
+                <span className='hidden md:inline'>
+                  {isSaving ? '저장 중...' : '저장'}
+                </span>
               </button>
 
-              <button
+              {/* <button
                 onClick={handleExport}
                 className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2'
               >
                 <Download className='w-4 h-4' />
-                <span>내보내기</span>
-              </button>
+                <span className='hidden md:inline'>내보내기</span>
+              </button> */}
 
               <button
                 onClick={() => setShowAIChat(!showAIChat)}
@@ -398,7 +464,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                 }`}
               >
                 <Bot className='w-4 h-4' />
-                <span>AI 도움</span>
+                <span className='hidden md:inline'>AI 도움</span>
                 {aiMessages.length > 0 && (
                   <span className='bg-white/20 text-xs px-2 py-1 rounded-full'>
                     {aiMessages.filter((m) => m.type === 'ai').length}
@@ -575,6 +641,8 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     handleSaveStep(currentStep, data, completed)
                   }
                   onAIHelp={handleAIHelp}
+                  onGeneratePresentation={handleGeneratePresentation} // 추가
+                  onViewPresentation={handleViewPresentation} // 추가
                   researchController={appController.researchController}
                 />
               </div>
@@ -590,7 +658,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >
                     <ChevronLeft className='w-4 h-4' />
-                    <span>이전</span>
+                    <span className='hidden md:inline'>이전</span>
                   </button>
 
                   <div className='flex items-center space-x-3'>
@@ -599,9 +667,12 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                         handleSaveStep(currentStep, stepData[currentStep] || {})
                       }
                       disabled={isSaving}
-                      className='px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50'
+                      className='px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center space-x-2'
                     >
-                      {isSaving ? '저장 중...' : '저장'}
+                      <Save className='w-4 h-4' />
+                      <span className='hidden md:inline'>
+                        {isSaving ? '저장 중...' : '저장'}
+                      </span>
                     </button>
 
                     <button
@@ -616,8 +687,8 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       }`}
                     >
                       <Sparkles className='w-4 h-4' />
-                      <span>
-                        {isAIRequesting ? 'AI 응답 대기 중...' : 'AI 도움 받기'}
+                      <span className='hidden md:inline'>
+                        {isAIRequesting ? 'AI 응답 대기 중...' : 'AI 도움'}
                       </span>
                     </button>
                   </div>
@@ -629,7 +700,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     disabled={currentStep === 6}
                     className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                   >
-                    <span>다음</span>
+                    <span className='hidden md:inline'>다음</span>
                     <ChevronRight className='w-4 h-4' />
                   </button>
                 </div>
@@ -652,6 +723,14 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* 프레젠테이션 모달 */}
+          {showPresentationModal && presentationHtml && (
+            <PresentationModal
+              htmlContent={presentationHtml}
+              onClose={() => setShowPresentationModal(false)}
+            />
           )}
         </div>
       </div>

@@ -347,6 +347,19 @@ export class ResearchController {
     }
   }
 
+  // HTML 프레젠테이션 생성
+  async generateHtmlPresentation(
+    projectData: Record<string, unknown>
+  ): Promise<string | null> {
+    try {
+      const response = await geminiAI.generateHtmlPresentation(projectData);
+      return response.success ? response.content : null;
+    } catch (error) {
+      console.error('Error generating HTML presentation:', error);
+      return null;
+    }
+  }
+
   // 데이터 분석 도움
   async analyzeData(data: unknown[], dataType: string): Promise<string> {
     try {

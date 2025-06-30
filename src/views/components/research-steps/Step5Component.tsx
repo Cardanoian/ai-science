@@ -1,10 +1,11 @@
 import React from 'react';
-import { Presentation, Bot, Download } from 'lucide-react';
+import { Presentation, Bot, Download, Sparkles, Eye } from 'lucide-react';
 
 interface Step5LocalData {
   presentationTitle?: string;
   presentationSlides?: { [key: string]: string };
   presentationScript?: string;
+  generatedPresentationHtml?: string; // 추가: 생성된 HTML 프레젠테이션
 }
 
 interface Step5ComponentProps {
@@ -14,12 +15,16 @@ interface Step5ComponentProps {
     value: Step5LocalData[keyof Step5LocalData]
   ) => void;
   onAIHelp: (question: string, context?: Step5LocalData) => void;
+  onGeneratePresentation: () => void; // 추가: 발표자료 생성 콜백
+  onViewPresentation: () => void; // 추가: 발표자료 보기 콜백
 }
 
 const Step5Component: React.FC<Step5ComponentProps> = ({
   localData,
   onDataChange,
   onAIHelp,
+  onGeneratePresentation, // 추가
+  onViewPresentation, // 추가
 }) => {
   return (
     <div className='space-y-6'>
@@ -126,6 +131,25 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
         </div>
       </div>
 
+      {/* 발표 자료 생성/보기 버튼 */}
+      <div className='flex space-x-3'>
+        <button
+          onClick={onGeneratePresentation}
+          className='flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center space-x-2'
+        >
+          <Sparkles className='w-5 h-5' />
+          <span>발표자료 만들기</span>
+        </button>
+        <button
+          onClick={onViewPresentation}
+          disabled={!localData.generatedPresentationHtml} // HTML이 있을 때만 활성화
+          className='flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed'
+        >
+          <Eye className='w-5 h-5' />
+          <span>발표자료 보기</span>
+        </button>
+      </div>
+
       {/* 발표 대본 */}
       <div className='space-y-2'>
         <label className='block font-semibold text-gray-800'>
@@ -157,6 +181,7 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
               title: localData.presentationTitle || '나의 탐구 발표',
               slides: localData.presentationSlides || {},
               script: localData.presentationScript || '',
+              generatedHtml: localData.generatedPresentationHtml || '', // 추가
             };
 
             const blob = new Blob([JSON.stringify(presentationData, null, 2)], {

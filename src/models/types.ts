@@ -181,6 +181,7 @@ export interface ResearchStepContent {
   // 5단계: 탐구 발표 준비
   presentationSlides?: PresentationSlide[];
   presentationScript?: string;
+  generatedPresentationHtml?: string; // 추가: 생성된 HTML 프레젠테이션
 
   // 6단계: 성찰하기
   whatLearned?: string;

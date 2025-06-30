@@ -311,6 +311,87 @@ export class GeminiAIService {
   }
 
   /**
+   * HTML 프레젠테이션 생성 도움
+   */
+  async generateHtmlPresentation(
+    projectData: Record<string, unknown>
+  ): Promise<AIResponse> {
+    try {
+      const { step1, step2, step3, step4, step5, projectTitle } =
+        projectData as {
+          step1: Record<string, unknown>;
+          step2: Record<string, unknown>;
+          step3: Record<string, unknown>;
+          step4: Record<string, unknown>;
+          step5: Record<string, unknown>;
+          projectTitle: string;
+        };
+
+      const prompt = `
+당신은 초등학생을 위한 과학 발표 자료를 HTML 형식으로 생성하는 전문가입니다.
+다음 탐구 프로젝트 데이터를 바탕으로 매력적이고 이해하기 쉬운 HTML 프레젠테이션을 만들어주세요.
+
+**프로젝트 제목:** ${projectTitle}
+
+**1단계: 탐구 주제 찾기**
+관심사: ${JSON.stringify(step1.interests || [])}
+선택된 주제: ${step1.selectedTopic || ''}
+주제 선정 이유: ${step1.topicReason || ''}
+
+**2단계: 탐구 질문과 가설**
+관찰 내용: ${JSON.stringify(step2.observations || [])}
+탐구 질문: ${step2.researchQuestion || ''}
+가설: ${step2.hypothesis || ''}
+
+**3단계: 실험 계획하기**
+재료: ${JSON.stringify(step3.materials || [])}
+절차: ${JSON.stringify(step3.procedure || [])}
+변인: ${JSON.stringify(step3.variables || {})}
+안전 수칙: ${JSON.stringify(step3.safetyPrecautions || [])}
+
+**4단계: 결과 정리 및 결론**
+실험 결과: ${JSON.stringify(step4.experimentResults || [])}
+데이터 분석: ${step4.dataAnalysis || ''}
+결론: ${step4.conclusion || ''}
+
+**5단계: 탐구 발표 준비 (대본)**
+발표 대본: ${step5.presentationScript || ''}
+
+**요구사항:**
+1.  **HTML 형식:** 전체 응답은 완전한 HTML 문서여야 합니다. (<html>, <head>, <body> 태그 포함)
+2.  **간단한 스타일:** font-size, font-weight 정도만 사용하고, 다른 꾸밈(색상, 배경, 레이아웃 등)은 최소화해주세요. Tailwind CSS는 사용하지 마세요.
+3.  **슬라이드 구성:** 각 탐구 단계(1단계~5단계)를 별도의 슬라이드처럼 구성해주세요. 각 슬라이드는 명확한 제목과 내용을 포함해야 합니다.
+4.  **간결하고 명확한 내용:** 각 슬라이드의 내용은 간결하게 핵심만 전달하고, 어려운 과학 용어는 쉽게 풀어 설명해주세요.
+5.  **이미지/차트:** 데이터가 있다면 가상의 이미지나 차트(placeholder)를 포함하여 시각적 요소를 강조할 수 있습니다. (실제 데이터 렌더링은 불가능하므로, "여기에 차트가 들어갈 예정입니다"와 같은 텍스트로 대체)
+6.  **단일 HTML 파일:** 모든 CSS는 '<style>' 태그 내에 포함하고, JavaScript는 '<script>' 태그 내에 포함하여 단일 HTML 파일로 완성해주세요.
+
+(중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 HTML 코드만 반환하세요.)
+`;
+
+      const response = await this.client.models.generateContent({
+        model: this.model,
+        contents: prompt,
+        config: {
+          // maxOutputTokens: 4000, // HTML 생성을 위해 토큰 제한 늘림
+          temperature: 0.8,
+        },
+      });
+
+      return {
+        content: response.text ?? '',
+        success: true,
+      };
+    } catch (error) {
+      console.error('HTML 프레젠테이션 생성 중 오류:', error);
+      return {
+        content: 'HTML 프레젠테이션 생성 중 오류가 발생했습니다.',
+        success: false,
+        error: error instanceof Error ? error.message : '알 수 없는 오류',
+      };
+    }
+  }
+
+  /**
    * 질문 개선 도움말
    */
   async improveQuestion(originalQuestion: string): Promise<AIResponse> {
