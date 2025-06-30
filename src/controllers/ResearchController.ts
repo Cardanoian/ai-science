@@ -230,11 +230,13 @@ export class ResearchController {
         stepData && Object.keys(stepData).length > 0
           ? `\n\n[학생이 입력한 자료]\n${JSON.stringify(stepData, null, 2)}`
           : '';
-      const response = await geminiAI.provideFeedback({
+      const request = {
         step: stepNumber,
         content: question + contextText,
         studentLevel: '초등학교',
-      });
+      };
+
+      const response = await geminiAI.provideFeedback(request);
 
       if (response.success) {
         return response.content;

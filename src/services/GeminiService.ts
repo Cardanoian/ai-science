@@ -85,13 +85,13 @@ export class GeminiAIService {
 (중요: 응답을 마크다운 코드블록으로 감싸지 말고, 순수한 JSON만 반환하세요.)
 `;
 
-      // TODO: console.log 지우기
-      console.log(interests, grade);
-
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 1000, temperature: 0.7 },
+        config: {
+          // maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
       });
       const content = response.text ?? '';
       const topics = JSON.parse(content);
@@ -126,7 +126,10 @@ export class GeminiAIService {
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 300, temperature: 0.6 },
+        config: {
+          // maxOutputTokens: 300,
+          temperature: 0.6,
+        },
       });
       const text = response.text ?? '';
       const parsed = text.split(',').map((item) => item.trim());
@@ -180,12 +183,16 @@ export class GeminiAIService {
 - 과학적 사고 과정 강조
 
 대답은 마크다운 형식 말고 일반 텍스트로 해주세요.
+마지막에 전체 내용을 3문장 이내로 요약해주세요.
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 500, temperature: 0.6 },
+        config: {
+          // maxOutputTokens: 500,
+          temperature: 0.6,
+        },
       });
 
       return {
@@ -234,12 +241,16 @@ export class GeminiAIService {
 - 일상적인 재료 사용
 - 명확한 변인 구분
 - 구체적인 실험 절차
+- 답변은 마크다운이 아닌 일반 텍스트
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 800, temperature: 0.5 },
+        config: {
+          // maxOutputTokens: 800,
+          temperature: 0.5,
+        },
       });
       const content = response.text ?? '';
       return JSON.parse(content);
@@ -273,12 +284,16 @@ export class GeminiAIService {
 - 자연스러운 말투
 - 청중과의 소통 고려
 - 핵심 내용 강조
+- 답변은 마크다운이 아닌 일반 텍스트
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 1000, temperature: 0.7 },
+        config: {
+          // maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
       });
 
       return {
@@ -311,13 +326,18 @@ export class GeminiAIService {
 3. 명확하고 구체적인 표현
 4. 초등학생 수준에 적합
 
+(출력 형식:마크다운이 아닌 일반 텍스트로 해주세요.)
 개선된 질문과 함께 왜 더 좋은지 설명해주세요.
+마지막에 전체 내용을 3문장 이내로 요약해주세요.
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 400, temperature: 0.6 },
+        config: {
+          // maxOutputTokens: 400,
+          temperature: 0.6,
+        },
       });
 
       return {
@@ -351,13 +371,18 @@ export class GeminiAIService {
 3. 추가로 고려해야 할 점
 4. 데이터의 신뢰성에 대한 평가
 
+답변은 마크다운이 아닌 일반 텍스트로 해주세요.
 초등학생이 이해할 수 있는 수준으로 설명해주세요.
+마지막에 전체 내용을 3문장 이내로 요약해주세요.
 `;
 
       const response = await this.client.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: { maxOutputTokens: 600, temperature: 0.5 },
+        config: {
+          // maxOutputTokens: 600,
+          temperature: 0.5,
+        },
       });
 
       return {
