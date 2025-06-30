@@ -41,7 +41,7 @@ export interface ConceptResponse extends AIResponse {
 
 export class GeminiAIService {
   private client: GoogleGenAI;
-  private model: string = 'gemini-2.0-flash';
+  private model: string = 'gemini-2.5-flash';
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
