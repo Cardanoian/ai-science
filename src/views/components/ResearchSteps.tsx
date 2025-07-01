@@ -20,6 +20,7 @@ interface ResearchStepsProps {
   onGeneratePresentation: () => void; // 추가
   onViewPresentation: () => void; // 추가
   researchController: ResearchController;
+  isAIRequesting: boolean;
 }
 
 const ResearchSteps: React.FC<ResearchStepsProps> = ({
@@ -31,6 +32,7 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
   onGeneratePresentation, // 추가
   onViewPresentation, // 추가
   researchController,
+  isAIRequesting,
 }) => {
   const [localData, setLocalData] = useState(stepData);
 
@@ -76,9 +78,10 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
     onUpdateItem: handleUpdateItem,
     onAIHelp,
     onSave,
-    onGeneratePresentation, // 추가
-    onViewPresentation, // 추가
+    onGeneratePresentation,
+    onViewPresentation,
     researchController,
+    isAIRequesting,
   };
 
   // 단계별 컴포넌트 렌더링

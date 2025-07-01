@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Presentation, Bot, Download, Sparkles, Eye } from 'lucide-react';
 
 interface Step5LocalData {
   presentationTitle?: string;
   presentationSlides?: { [key: string]: string };
   presentationScript?: string;
-  generatedPresentationHtml?: string; // 추가: 생성된 HTML 프레젠테이션
+  generatedPresentationHtml?: string;
 }
 
 interface Step5ComponentProps {
@@ -15,17 +15,35 @@ interface Step5ComponentProps {
     value: Step5LocalData[keyof Step5LocalData]
   ) => void;
   onAIHelp: (question: string, context?: Step5LocalData) => void;
-  onGeneratePresentation: () => void; // 추가: 발표자료 생성 콜백
-  onViewPresentation: () => void; // 추가: 발표자료 보기 콜백
+  onGeneratePresentation: () => void;
+  onViewPresentation: () => void;
+  isAIRequesting: boolean;
 }
 
 const Step5Component: React.FC<Step5ComponentProps> = ({
   localData,
   onDataChange,
   onAIHelp,
-  onGeneratePresentation, // 추가
-  onViewPresentation, // 추가
+  onGeneratePresentation,
+  onViewPresentation,
+  isAIRequesting,
 }) => {
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const isMobile = screenWidth < 768; // TailwindCSS 'md' breakpoint is 768px
+
   return (
     <div className='space-y-6'>
       {/* 단계 설명 */}
@@ -138,7 +156,7 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
           className='flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center space-x-2'
         >
           <Sparkles className='w-5 h-5' />
-          <span>발표자료 만들기</span>
+          <span>{isMobile ? '자료 만들기' : '발표자료 만들기'}</span>
         </button>
         <button
           onClick={onViewPresentation}
@@ -146,7 +164,7 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
           className='flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <Eye className='w-5 h-5' />
-          <span>발표자료 보기</span>
+          <span>{isMobile ? '자료 보기' : '발표자료 보기'}</span>
         </button>
       </div>
 
@@ -166,13 +184,22 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
       {/* AI 도움 버튼 */}
       <div className='flex space-x-3'>
         <button
+          disabled={isAIRequesting}
           onClick={() =>
             onAIHelp('발표 대본을 더 좋게 만들고 싶어요', localData)
           }
           className='flex-1 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
         >
           <Bot className='w-5 h-5' />
-          <span>AI 발표 코칭 받기</span>
+          <span>
+            {isAIRequesting
+              ? isMobile
+                ? '응답 중'
+                : 'AI 응답 대기 중...'
+              : isMobile
+              ? 'AI 코칭'
+              : 'AI 발표 코칭 받기'}
+          </span>
         </button>
         <button
           onClick={() => {
@@ -181,7 +208,7 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
               title: localData.presentationTitle || '나의 탐구 발표',
               slides: localData.presentationSlides || {},
               script: localData.presentationScript || '',
-              generatedHtml: localData.generatedPresentationHtml || '', // 추가
+              generatedHtml: localData.generatedPresentationHtml || '',
             };
 
             const blob = new Blob([JSON.stringify(presentationData, null, 2)], {
@@ -196,10 +223,10 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
 
             URL.revokeObjectURL(url);
           }}
-          className='px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2'
+          className='px-4 py-3 bg-orange-500 flex-1 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2'
         >
           <Download className='w-4 h-4' />
-          <span>발표 자료 다운로드</span>
+          <span>{isMobile ? '자료 받기' : '발표 자료 다운로드'}</span>
         </button>
       </div>
     </div>

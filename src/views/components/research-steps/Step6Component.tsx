@@ -22,6 +22,7 @@ interface Step6ComponentProps {
   ) => void;
   onAIHelp: (question: string, context?: Step6LocalData) => void;
   onSave: (data: Step6LocalData, completed?: boolean) => void;
+  isAIRequesting: boolean;
 }
 
 const Step6Component: React.FC<Step6ComponentProps> = ({
@@ -29,6 +30,7 @@ const Step6Component: React.FC<Step6ComponentProps> = ({
   onDataChange,
   onAIHelp,
   onSave,
+  isAIRequesting,
 }) => {
   return (
     <div className='space-y-6'>
@@ -169,7 +171,9 @@ const Step6Component: React.FC<Step6ComponentProps> = ({
         className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
       >
         <Bot className='w-5 h-5' />
-        <span>AI와 함께 성찰하기</span>
+        <span>
+          {isAIRequesting ? 'AI 응답 대기 중...' : 'AI와 함께 성찰하기'}
+        </span>
       </button>
     </div>
   );

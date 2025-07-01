@@ -28,6 +28,7 @@ interface Step3ComponentProps {
     value: string
   ) => void;
   onAIHelp: (question: string, context?: Step3LocalData) => void;
+  isAIRequesting: boolean;
 }
 
 const Step3Component: React.FC<Step3ComponentProps> = ({
@@ -37,6 +38,7 @@ const Step3Component: React.FC<Step3ComponentProps> = ({
   onRemoveItem,
   onUpdateItem,
   onAIHelp,
+  isAIRequesting,
 }) => {
   return (
     <div className='space-y-6'>
@@ -276,13 +278,16 @@ const Step3Component: React.FC<Step3ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
+        disabled={isAIRequesting}
         onClick={() =>
           onAIHelp('실험 계획에 대한 피드백을 받고 싶어요', localData)
         }
         className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
       >
         <Bot className='w-5 h-5' />
-        <span>AI에게 실험 계획 검토받기</span>
+        <span>
+          {isAIRequesting ? 'AI 응답 대기 중...' : 'AI에게 실험 계획 검토받기'}
+        </span>
       </button>
     </div>
   );

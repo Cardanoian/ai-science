@@ -425,7 +425,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                 <h1 className='text-xl font-bold text-gray-800'>
                   {project?.title || '나의 탐구 프로젝트'}
                 </h1>
-                <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                <div className='flex items-center space-x-4 text-sm text-gray-600 hidden md:inline'>
                   {/* <span>탐구자: {project?.student_name}</span> */}
                   <span>진행률: {calculateProgress()}%</span>
                   <span>현재 단계: {currentStep}/6</span>
@@ -439,34 +439,26 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   handleSaveStep(currentStep, stepData[currentStep] || {})
                 }
                 disabled={isSaving}
-                className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 disabled:opacity-50'
+                className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 disabled:opacity-50 h-10'
               >
                 <Save className='w-4 h-4' />
-                <span className='hidden md:inline'>
+                <span className='hidden md:inline flex-shrink-0'>
                   {isSaving ? '저장 중...' : '저장'}
                 </span>
               </button>
 
-              {/* <button
-                onClick={handleExport}
-                className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2'
-              >
-                <Download className='w-4 h-4' />
-                <span className='hidden md:inline'>내보내기</span>
-              </button> */}
-
               <button
                 onClick={() => setShowAIChat(!showAIChat)}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 h-10 ${
                   showAIChat
                     ? 'bg-blue-500 text-white'
                     : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
                 }`}
               >
                 <Bot className='w-4 h-4' />
-                <span className='hidden md:inline'>AI 도움</span>
+                <span className='hidden md:inline flex-shrink-0'>AI 도움</span>
                 {aiMessages.length > 0 && (
-                  <span className='bg-white/20 text-xs px-2 py-1 rounded-full'>
+                  <span className='bg-white/20 text-xs px-2 py-1 rounded-full hidden md:inline'>
                     {aiMessages.filter((m) => m.type === 'ai').length}
                   </span>
                 )}
@@ -555,19 +547,13 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 
               {/* 진행률 표시 */}
               <div className='mt-8 p-4 bg-gray-50 rounded-xl'>
-                <div className='flex items-center justify-between mb-2'>
+                <div className='flex items-center justify-between mb-2 hidden md:inline'>
                   <span className='text-sm font-medium text-gray-700'>
                     전체 진행률
                   </span>
                   <span className='text-sm font-bold text-blue-600'>
                     {calculateProgress()}%
                   </span>
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-3'>
-                  <div
-                    className='bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500'
-                    style={{ width: `${calculateProgress()}%` }}
-                  ></div>
                 </div>
                 <p className='text-xs text-gray-500 mt-2'>
                   {currentStep}/6 단계 완료
@@ -606,7 +592,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     })()}
                   </div>
 
-                  <div className='flex items-center space-x-2'>
+                  <div className='flex items-center space-x-2 hidden md:inline'>
                     <button
                       onClick={() =>
                         handleStepChange(Math.max(1, currentStep - 1))
@@ -644,6 +630,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   onGeneratePresentation={handleGeneratePresentation} // 추가
                   onViewPresentation={handleViewPresentation} // 추가
                   researchController={appController.researchController}
+                  isAIRequesting={isAIRequesting}
                 />
               </div>
 
@@ -655,7 +642,8 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       handleStepChange(Math.max(1, currentStep - 1))
                     }
                     disabled={currentStep === 1}
-                    className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                    // className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                    className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
                   >
                     <ChevronLeft className='w-4 h-4' />
                     <span className='hidden md:inline'>이전</span>
@@ -680,17 +668,10 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       //   handleAIHelp('현재 단계에 대한 도움을 받고 싶어요')
                       // }
                       onClick={() => setShowAIChat(!showAIChat)}
-                      disabled={isAIRequesting}
-                      className={`px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-colors flex items-center space-x-2 ${
-                        isAIRequesting
-                          ? 'opacity-50 cursor-not-allowed'
-                          : 'hover:from-blue-600 hover:to-purple-700'
-                      }`}
+                      className={`px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-colors flex items-center space-x-2 hover:from-blue-600 hover:to-purple-700`}
                     >
                       <Sparkles className='w-4 h-4' />
-                      <span className='hidden md:inline'>
-                        {isAIRequesting ? 'AI 응답 대기 중...' : 'AI 도움'}
-                      </span>
+                      <span className='hidden md:inline'>AI 도움</span>
                     </button>
                   </div>
 
@@ -699,7 +680,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                       handleStepChange(Math.min(6, currentStep + 1))
                     }
                     disabled={currentStep === 6}
-                    className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                    className='flex items-center space-x-2 px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
                   >
                     <span className='hidden md:inline'>다음</span>
                     <ChevronRight className='w-4 h-4' />

@@ -18,6 +18,7 @@ interface Step2ComponentProps {
   onRemoveItem: (key: string, index: number) => void;
   onUpdateItem: (key: string, index: number, value: unknown) => void;
   onAIHelp: (question: string, context?: Step2LocalData) => void;
+  isAIRequesting: boolean;
 }
 
 const Step2Component: React.FC<Step2ComponentProps> = ({
@@ -27,6 +28,7 @@ const Step2Component: React.FC<Step2ComponentProps> = ({
   onRemoveItem,
   onUpdateItem,
   onAIHelp,
+  isAIRequesting,
 }) => {
   return (
     <div className='space-y-6'>
@@ -108,7 +110,7 @@ const Step2Component: React.FC<Step2ComponentProps> = ({
       {/* 가설 */}
       <div className='space-y-2'>
         <label className='block font-semibold text-gray-800'>가설:</label>
-        <div className='flex items-center space-x-2'>
+        <div className='flex flex-col space-y-2 md:flex-row md:items-center md:space-x-2'>
           <span className='text-gray-600 font-medium'>만약</span>
           <input
             type='text'
@@ -154,13 +156,18 @@ const Step2Component: React.FC<Step2ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
+        disabled={isAIRequesting}
         onClick={() =>
           onAIHelp('탐구 질문과 가설에 대한 피드백을 받고 싶어요', localData)
         }
         className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
       >
         <Bot className='w-5 h-5' />
-        <span>AI에게 질문과 가설 검토받기</span>
+        <span>
+          {isAIRequesting
+            ? 'AI 응답 대기 중...'
+            : 'AI에게 질문과 가설 검토받기'}
+        </span>
       </button>
     </div>
   );

@@ -200,7 +200,12 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 height={80}
                 interval={0}
               />
-              <YAxis />
+              <YAxis
+                domain={[
+                  Math.floor((statistics?.minimum || 0) * 0.9),
+                  Math.ceil((statistics?.maximum || 0) * 1.1),
+                ]}
+              />
               <Tooltip />
               <Bar dataKey='value' fill={colors[0]} />
             </BarChart>
@@ -222,7 +227,12 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 height={80}
                 interval={0}
               />
-              <YAxis />
+              <YAxis
+                domain={[
+                  Math.floor((statistics?.minimum || 0) * 0.9),
+                  Math.ceil((statistics?.maximum || 0) * 1.1),
+                ]}
+              />
               <Tooltip />
               <Line
                 type='monotone'
@@ -388,7 +398,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           데이터 입력:
         </label>
         <div className='space-y-3'>
-          <div className='grid grid-cols-2 gap-4 font-medium text-sm text-gray-600'>
+          <div className='flex gap-4 font-medium text-sm text-gray-600 mx-10 justify-between'>
             <div>
               {chartType === 'pie' ? '항목' : xAxisLabel || '가로 수치'}
             </div>
@@ -396,29 +406,32 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           </div>
 
           {dataPoints.map((point, index) => (
-            <div key={index} className='grid grid-cols-2 gap-4'>
+            <div
+              key={index}
+              className='flex flex-col md:flex-row gap-2 md:gap-4'
+            >
               <input
                 type='text'
                 value={point.name}
                 onChange={(e) => updateDataPoint(index, 'name', e.target.value)}
-                className='p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 placeholder={`항목 ${index + 1}`}
               />
-              <div className='flex items-center space-x-2'>
+              <div className='flex items-center w-full gap-2'>
                 <input
                   type='number'
                   value={point.value}
                   onChange={(e) =>
                     updateDataPoint(index, 'value', e.target.value)
                   }
-                  className='flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   placeholder='숫자값'
                   step='0.1'
                 />
                 {dataPoints.length > 2 && (
                   <button
                     onClick={() => removeDataPoint(index)}
-                    className='p-2 text-red-500 hover:text-red-700 transition-colors'
+                    className='p-2 text-red-500 hover:text-red-700 transition-colors flex-shrink-0'
                     title='삭제'
                   >
                     <Trash2 className='w-5 h-5' />
@@ -465,10 +478,10 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
             <div className='flex space-x-2'>
               <button
                 onClick={handleExport}
-                className='flex items-center space-x-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors'
+                className='flex items-center space-x-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors min-h-10 min-w-10'
               >
                 <Download className='w-4 h-4' />
-                <span>CSV 다운로드</span>
+                <span className='hidden md:inline'>CSV 다운로드</span>
               </button>
             </div>
           </div>

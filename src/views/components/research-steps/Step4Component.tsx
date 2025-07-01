@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Bot } from 'lucide-react';
+import { BarChart3, Bot, Circle, Triangle, X } from 'lucide-react';
 import ChartGenerator from '../ChartGenerator';
 import type { ChartData } from '../../../models/types';
 
@@ -18,12 +18,14 @@ interface Step4ComponentProps {
     value: Step4LocalData[keyof Step4LocalData]
   ) => void;
   onAIHelp: (question: string, context?: Step4LocalData) => void;
+  isAIRequesting: boolean;
 }
 
 const Step4Component: React.FC<Step4ComponentProps> = ({
   localData,
   onDataChange,
   onAIHelp,
+  isAIRequesting,
 }) => {
   return (
     <div className='space-y-6'>
@@ -76,8 +78,19 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
             가설 검증 결과:
           </label>
           <div className='flex space-x-4'>
-            {['맞았다', '틀렸다', '부분적으로 맞았다'].map((option) => (
-              <label key={option} className='flex items-center space-x-2'>
+            {['맞았다', '부분적으로 맞았다', '틀렸다'].map((option) => (
+              <label
+                key={option}
+                className={`
+                  flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer transition-all duration-200
+                  ${
+                    localData.hypothesisResult === option
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }
+                  md:space-x-2
+                `}
+              >
                 <input
                   type='radio'
                   name='hypothesisResult'
@@ -86,9 +99,18 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
                   onChange={(e) =>
                     onDataChange('hypothesisResult', e.target.value)
                   }
-                  className='text-blue-500'
+                  className='hidden'
                 />
-                <span className='text-sm'>{option}</span>
+                <span className='text-sm hidden md:inline'>{option}</span>
+                <span className='text-sm md:hidden'>
+                  {option === '맞았다' ? (
+                    <Circle className='w-5 h-5' />
+                  ) : option === '부분적으로 맞았다' ? (
+                    <Triangle className='w-5 h-5' />
+                  ) : (
+                    <X className='w-5 h-5' />
+                  )}
+                </span>
               </label>
             ))}
           </div>
@@ -117,11 +139,14 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
+        disabled={isAIRequesting}
         onClick={() => onAIHelp('실험 결과 분석에 도움이 필요해요', localData)}
         className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
       >
         <Bot className='w-5 h-5' />
-        <span>AI에게 결과 분석 도움받기</span>
+        <span>
+          {isAIRequesting ? 'AI 응답 대기 중...' : 'AI에게 결과 분석 도움받기'}
+        </span>
       </button>
     </div>
   );
