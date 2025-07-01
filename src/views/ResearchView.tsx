@@ -676,9 +676,10 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     </button>
 
                     <button
-                      onClick={() =>
-                        handleAIHelp('현재 단계에 대한 도움을 받고 싶어요')
-                      }
+                      // onClick={() =>
+                      //   handleAIHelp('현재 단계에 대한 도움을 받고 싶어요')
+                      // }
+                      onClick={() => setShowAIChat(!showAIChat)}
                       disabled={isAIRequesting}
                       className={`px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-colors flex items-center space-x-2 ${
                         isAIRequesting

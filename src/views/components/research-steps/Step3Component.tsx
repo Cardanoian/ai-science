@@ -11,6 +11,7 @@ interface Step3LocalData {
   variables: Variables;
   materials: string[];
   safetyPrecautions: string[];
+  procedure: string[];
 }
 
 interface Step3ComponentProps {
@@ -234,6 +235,41 @@ const Step3Component: React.FC<Step3ComponentProps> = ({
           >
             <Plus className='w-4 h-4' />
             <span>주의사항 추가</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 실험 단계 */}
+      <div className='space-y-4'>
+        <label className='block font-semibold text-gray-800'>실험 단계:</label>
+        <div className='space-y-2'>
+          {(localData.procedure || ['']).map((step: string, index: number) => (
+            <div key={index} className='flex items-center space-x-2'>
+              <input
+                type='text'
+                value={step}
+                onChange={(e) =>
+                  onUpdateItem('procedure', index, e.target.value)
+                }
+                className='flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                placeholder={`단계 ${index + 1}: 예) 콩나물을 화분에 심는다`}
+              />
+              {index > 0 && (
+                <button
+                  onClick={() => onRemoveItem('procedure', index)}
+                  className='p-2 text-red-500 hover:text-red-700 transition-colors'
+                >
+                  <Trash2 className='w-4 h-4' />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => onAddItem('procedure')}
+            className='flex items-center space-x-2 px-4 py-2 text-green-600 border border-green-300 rounded-lg hover:bg-green-50 transition-colors'
+          >
+            <Plus className='w-4 h-4' />
+            <span>단계 추가</span>
           </button>
         </div>
       </div>

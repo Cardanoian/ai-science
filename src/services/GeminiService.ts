@@ -19,6 +19,7 @@ export interface FeedbackRequest {
   step: number;
   content: string;
   studentLevel: string;
+  context?: Record<string, unknown>;
 }
 
 export interface ExperimentPlan {
@@ -163,6 +164,37 @@ export class GeminiAIService {
         6: '성찰 과정에서는 탐구 과정을 돌아보고 개선점을 찾는 것이 중요합니다.',
       };
 
+      const contextData = request.context as Record<string, unknown>;
+      let additionalContext = '';
+      if (request.step === 3 && contextData) {
+        const materials = ((contextData.materials as string[]) || []).join(
+          ', '
+        );
+        const safetyPrecautions = (
+          (contextData.safetyPrecautions as string[]) || []
+        ).join(', ');
+        const procedure = ((contextData.procedure as string[]) || []).join(
+          ', '
+        );
+        const variables = contextData.variables as {
+          independent: string;
+          dependent: string;
+          controlled: string[];
+        };
+        const independent = variables?.independent || '';
+        const dependent = variables?.dependent || '';
+        const controlled = (variables?.controlled || []).join(', ');
+
+        additionalContext = `
+실험 재료: ${materials}
+안전 주의사항: ${safetyPrecautions}
+실험 단계: ${procedure}
+독립 변인: ${independent}
+종속 변인: ${dependent}
+통제 변인: ${controlled}
+`;
+      }
+
       const prompt = `
 당신은 친근하고 격려적인 과학 교육 AI입니다. 초등학생의 과학 탐구를 도와주세요.
 
@@ -170,6 +202,7 @@ export class GeminiAIService {
 단계 가이드: ${stepGuides[request.step as keyof typeof stepGuides]}
 학생 수준: ${request.studentLevel}
 학생 응답: "${request.content}"
+${additionalContext}
 
 다음과 같이 피드백을 제공해주세요:
 1. 잘한 점 1-2개 (구체적으로 칭찬)
