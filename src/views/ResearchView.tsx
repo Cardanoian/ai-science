@@ -20,7 +20,6 @@ import type {
   Board,
   ResearchProject,
   ResearchStepContent,
-  ResearchStep,
 } from '../models/types';
 import ResearchSteps from './components/ResearchSteps';
 import AIChat from './components/AIChat';
@@ -158,15 +157,15 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         }
 
         // 각 단계 데이터 로드
-        const allStepData: Record<number, object> = {};
+        const allStepData: Record<number, ResearchStepContent> = {};
         for (let i = 1; i <= 6; i++) {
-          const stepInfo: ResearchStep | null =
+          const stepInfo: ResearchStepContent | null =
             await appController.researchController.getStepData(
               projectData.id,
               i
             );
           if (stepInfo) {
-            allStepData[i] = stepInfo.content;
+            allStepData[i] = stepInfo;
           }
         }
         setStepData(allStepData);
@@ -185,11 +184,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
   ]);
 
   // 단계 데이터 저장
-  const handleSaveStep = async (
-    stepNumber: number,
-    content: object,
-    completed: boolean = false
-  ) => {
+  const handleSaveStep = async (stepNumber: number, content: object) => {
     if (!project) return;
 
     try {
@@ -197,8 +192,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
       await appController.researchController.saveStepData(
         project.id,
         stepNumber,
-        content,
-        completed
+        content
       );
 
       setStepData((prev) => ({ ...prev, [stepNumber]: content }));
@@ -425,7 +419,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                 <h1 className='text-xl font-bold text-gray-800'>
                   {project?.title || '나의 탐구 프로젝트'}
                 </h1>
-                <div className='flex items-center space-x-4 text-sm text-gray-600 hidden md:inline'>
+                <div className='items-center space-x-4 text-sm text-gray-600 hidden md:flex'>
                   {/* <span>탐구자: {project?.student_name}</span> */}
                   <span>진행률: {calculateProgress()}%</span>
                   <span>현재 단계: {currentStep}/6</span>
@@ -547,7 +541,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 
               {/* 진행률 표시 */}
               <div className='mt-8 p-4 bg-gray-50 rounded-xl'>
-                <div className='flex items-center justify-between mb-2 hidden md:inline'>
+                <div className='items-center justify-between mb-2 hidden md:flex'>
                   <span className='text-sm font-medium text-gray-700'>
                     전체 진행률
                   </span>
@@ -592,7 +586,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                     })()}
                   </div>
 
-                  <div className='flex items-center space-x-2 hidden md:inline'>
+                  <div className='items-center space-x-2 hidden md:flex'>
                     <button
                       onClick={() =>
                         handleStepChange(Math.max(1, currentStep - 1))
@@ -623,9 +617,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
                   onDataChange={(data) => {
                     setStepData((prev) => ({ ...prev, [currentStep]: data }));
                   }}
-                  onSave={(data, completed) =>
-                    handleSaveStep(currentStep, data, completed)
-                  }
+                  onSave={(data) => handleSaveStep(currentStep, data)}
                   onAIHelp={handleAIHelp}
                   onGeneratePresentation={handleGeneratePresentation} // 추가
                   onViewPresentation={handleViewPresentation} // 추가

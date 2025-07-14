@@ -92,6 +92,9 @@ export class GeminiAIService {
         config: {
           // maxOutputTokens: 1000,
           temperature: 0.7,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
       const content = response.text ?? '';
@@ -130,6 +133,9 @@ export class GeminiAIService {
         config: {
           // maxOutputTokens: 300,
           temperature: 0.6,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
       const text = response.text ?? '';
@@ -225,6 +231,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 500,
           temperature: 0.6,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
 
@@ -283,6 +292,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 800,
           temperature: 0.5,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
       const content = response.text ?? '';
@@ -326,6 +338,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 1000,
           temperature: 0.7,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
 
@@ -407,6 +422,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 4000, // HTML 생성을 위해 토큰 제한 늘림
           temperature: 0.8,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
 
@@ -451,6 +469,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 400,
           temperature: 0.6,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
 
@@ -496,6 +517,9 @@ ${additionalContext}
         config: {
           // maxOutputTokens: 600,
           temperature: 0.5,
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking
+          },
         },
       });
 

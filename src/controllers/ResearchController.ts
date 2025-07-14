@@ -2,7 +2,6 @@ import { supabase } from '../lib/supabase';
 import { geminiAI } from '../services/GeminiService';
 import type {
   ResearchProject,
-  ResearchStep,
   ExperimentData,
   ResearchStepContent,
   ResearchTopicRecommendation,
@@ -86,17 +85,21 @@ export class ResearchController {
   async getStepData(
     projectId: string,
     stepNumber: number
-  ): Promise<ResearchStep | null> {
+  ): Promise<ResearchStepContent | null> {
     try {
       const { data, error } = await supabase
-        .from('research_steps')
-        .select('*')
-        .eq('project_id', projectId)
-        .eq('step_number', stepNumber)
-        .maybeSingle();
+        .from('research_projects')
+        .select('all_steps')
+        .eq('id', projectId)
+        .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+
+      if (data?.all_steps && data.all_steps[stepNumber]) {
+        return data.all_steps[stepNumber];
+      }
+
+      return null;
     } catch (error) {
       console.error('Error fetching step data:', error);
       return null;
@@ -107,59 +110,38 @@ export class ResearchController {
   async saveStepData(
     projectId: string,
     stepNumber: number,
-    content: ResearchStepContent,
-    completed: boolean = false
-  ): Promise<ResearchStep> {
+    content: ResearchStepContent
+  ): Promise<ResearchStepContent> {
     try {
-      const stepTitle = this.getStepTitle(stepNumber);
+      // 현재 프로젝트의 all_steps 데이터 조회
+      const { data: project, error: fetchError } = await supabase
+        .from('research_projects')
+        .select('all_steps')
+        .eq('id', projectId)
+        .single();
 
-      // 단계 데이터 존재 여부 확인 및 insert/update 분기 처리
-      let data: ResearchStep;
-      const existingResult = await supabase
-        .from('research_steps')
-        .select('*')
-        .eq('project_id', projectId)
-        .eq('step_number', stepNumber)
-        .maybeSingle();
-      if (existingResult.error) throw existingResult.error;
-      if (existingResult.data) {
-        // 기존 데이터가 있을 때는 id로 update
-        const updateResult = await supabase
-          .from('research_steps')
-          .update({
-            step_title: stepTitle,
-            content,
-            completed,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingResult.data.id)
-          .select()
-          .single();
-        if (updateResult.error) throw updateResult.error;
-        data = updateResult.data;
-      } else {
-        const insertResult = await supabase
-          .from('research_steps')
-          .insert([
-            {
-              project_id: projectId,
-              step_number: stepNumber,
-              step_title: stepTitle,
-              content,
-              completed,
-              updated_at: new Date().toISOString(),
-            },
-          ])
-          .select()
-          .single();
-        if (insertResult.error) throw insertResult.error;
-        data = insertResult.data;
-      }
+      if (fetchError) throw fetchError;
 
-      // 현재 단계 업데이트
-      await this.updateProject(projectId, {
-        current_step: Math.max(stepNumber, 1),
-      });
+      // 기존 all_steps 데이터 가져오기 (없으면 빈 객체)
+      const currentAllSteps = project?.all_steps || {};
+
+      // 해당 단계 데이터 업데이트
+      const updatedAllSteps = {
+        ...currentAllSteps,
+        [stepNumber]: content,
+      };
+
+      // all_steps 필드 업데이트
+      const { error: updateProjectError } = await supabase
+        .from('research_projects')
+        .update({
+          all_steps: updatedAllSteps,
+          current_step: Math.max(stepNumber, 1),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+
+      if (updateProjectError) throw updateProjectError;
 
       // 1단계 최종 탐구 주제 작성 시 노트 제목 업데이트
       if (stepNumber === 1 && content.selectedTopic) {
@@ -185,7 +167,8 @@ export class ResearchController {
           );
         }
       }
-      return data;
+
+      return content;
     } catch (error) {
       console.error('Error saving step data:', error);
       toast.error('데이터 저장에 실패했습니다.');
@@ -381,19 +364,6 @@ export class ResearchController {
       console.error('Error improving question:', error);
       return '질문 개선 중 오류가 발생했습니다.';
     }
-  }
-
-  // 단계 제목 반환
-  private getStepTitle(stepNumber: number): string {
-    const titles = {
-      1: '탐구 주제 찾기',
-      2: '탐구 질문과 가설',
-      3: '실험 계획하기',
-      4: '결과 정리 및 결론',
-      5: '탐구 발표 준비',
-      6: '성찰하기',
-    };
-    return titles[stepNumber as keyof typeof titles] || `${stepNumber}단계`;
   }
 
   // 기본 주제 제공 (AI 실패 시)

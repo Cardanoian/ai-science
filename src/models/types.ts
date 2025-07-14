@@ -59,6 +59,7 @@ export interface ResearchProject {
   title?: string;
   student_name: string;
   current_step: number;
+  all_steps?: Record<number, ResearchStepContent | null>;
   created_at: string;
   updated_at: string;
 }
