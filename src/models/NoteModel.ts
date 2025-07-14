@@ -35,7 +35,7 @@ export class NoteModel {
 
   get position(): NotePosition {
     return {
-      x: this.data.x_position,
+      x: this.data.position,
       y: this.data.y_position,
     };
   }
@@ -306,7 +306,7 @@ export class NoteModel {
     return {
       board_id: this.boardId,
       content: this.content,
-      x_position: newPosition?.x ?? this.position.x + 20,
+      position: newPosition?.x ?? this.position.x + 20,
       y_position: newPosition?.y ?? this.position.y + 20,
       color: this.color,
       created_at: new Date().toISOString(),

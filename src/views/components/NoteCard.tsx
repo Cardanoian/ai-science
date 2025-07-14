@@ -1,6 +1,6 @@
 import { useAppController } from '../../contexts/AppControllerContext';
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Edit3, Save, Palette, Move } from 'lucide-react';
+import { X, Edit3, Save, Palette } from 'lucide-react';
 import { colorPalette } from '../../constants/colorPalette';
 import type { Note } from '../../models/types';
 
@@ -11,6 +11,10 @@ interface NoteCardProps {
   onClick?: () => void;
   isReadOnly?: boolean;
   teacherId: string;
+  draggable?: boolean; // draggable 속성 추가
+  onDragStart?: (e: React.DragEvent, id: string) => void; // 드래그 이벤트 추가
+  onDragOver?: (e: React.DragEvent, id: string) => void; // 드래그 오버 이벤트 추가
+  onDrop?: (e: React.DragEvent, id: string) => void; // 드롭 이벤트 추가
 }
 
 const NoteCard: React.FC<NoteCardProps> = ({
@@ -20,12 +24,14 @@ const NoteCard: React.FC<NoteCardProps> = ({
   onClick,
   isReadOnly = false,
   teacherId,
+  draggable = false, // 기본값 false
+  onDragStart,
+  onDragOver,
+  onDrop,
 }) => {
   const appController = useAppController();
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(note.content);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -62,74 +68,6 @@ const NoteCard: React.FC<NoteCardProps> = ({
     }
   };
 
-  // 드래그 시작
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isReadOnly || isEditing) return;
-    e.preventDefault();
-    if (!cardRef.current) return;
-
-    const rect = cardRef.current!.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-    setShowMenu(false);
-  };
-
-  // 드래그 중
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !cardRef.current) return;
-
-    const boardRect = cardRef.current.parentElement!.getBoundingClientRect();
-    const newX = e.clientX - boardRect.left - dragOffset.x;
-    const newY = e.clientY - boardRect.top - dragOffset.y;
-
-    // 보드 영역 내부로 제한
-    const maxX = boardRect.width - cardRef.current.offsetWidth;
-    const maxY = boardRect.height - cardRef.current.offsetHeight;
-
-    const clampedX = Math.max(0, Math.min(newX, maxX));
-    const clampedY = Math.max(0, Math.min(newY, maxY));
-
-    cardRef.current.style.left = `${clampedX}px`;
-    cardRef.current.style.top = `${clampedY}px`;
-  };
-
-  // 드래그 종료
-  const handleMouseUp = (e: MouseEvent) => {
-    if (!isDragging || !cardRef.current) return;
-
-    const boardRect = cardRef.current.parentElement!.getBoundingClientRect();
-    const newX = e.clientX - boardRect.left - dragOffset.x;
-    const newY = e.clientY - boardRect.top - dragOffset.y;
-
-    const maxX = boardRect.width - cardRef.current.offsetWidth;
-    const maxY = boardRect.height - cardRef.current.offsetHeight;
-
-    const clampedX = Math.max(0, Math.min(newX, maxX));
-    const clampedY = Math.max(0, Math.min(newY, maxY));
-
-    onUpdate(note.id, {
-      x_position: Math.round(clampedX),
-      y_position: Math.round(clampedY),
-    });
-
-    setIsDragging(false);
-  };
-
-  // 드래그 이벤트 리스너 등록/해제
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
-
   // 편집 모드 시 텍스트에어리어 포커스
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -156,11 +94,11 @@ const NoteCard: React.FC<NoteCardProps> = ({
   // 시간 포맷팅
   const getTimeAgo = () => {
     const now = new Date();
-    const created = new Date(note.created_at);
-    const diffMs = now.getTime() - created.getTime();
+    const updated = new Date(note.updated_at);
+    const diffMs = now.getTime() - updated.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays > 0) return `${diffDays}일 전`;
     if (diffHours > 0) return `${diffHours}시간 전`;
@@ -171,14 +109,10 @@ const NoteCard: React.FC<NoteCardProps> = ({
   return (
     <div
       ref={cardRef}
-      className={`absolute w-64 min-h-32 p-4 rounded-xl shadow-lg border-2 select-none ${
-        isDragging
-          ? 'scale-105 shadow-2xl z-50 cursor-grabbing'
-          : 'cursor-grab hover:shadow-xl'
-      } ${isEditing ? 'ring-2 ring-blue-500' : ''}`}
+      className={`w-64 min-h-32 p-4 rounded-xl shadow-lg border-2 select-none ${
+        isEditing ? 'ring-2 ring-blue-500' : ''
+      } ${draggable ? 'cursor-grab hover:shadow-xl' : ''}`} // 드래그 가능할 때만 커서 변경
       style={{
-        left: `${note.x_position}px`,
-        top: `${note.y_position}px`,
         backgroundColor: note.color,
         borderColor:
           note.color === '#fbbf24'
@@ -197,16 +131,15 @@ const NoteCard: React.FC<NoteCardProps> = ({
             ? '#059669'
             : '#ef4444',
       }}
-      onMouseDown={(e) => {
-        // 버튼 클릭 시 드래그 방지
-        if ((e.target as HTMLElement).closest('button')) return;
-        handleMouseDown(e);
-      }}
+      draggable={draggable} // draggable 속성 적용
+      onDragStart={(e) => onDragStart?.(e, note.id)}
+      onDragOver={(e) => onDragOver?.(e, note.id)}
+      onDrop={(e) => onDrop?.(e, note.id)}
     >
       {/* 헤더 */}
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center space-x-1'>
-          {!isReadOnly && <Move className='w-3 h-3 text-gray-600 opacity-60' />}
+          {/* {!isReadOnly && <Move className='w-3 h-3 text-gray-600 opacity-60' />} */}
         </div>
 
         {!isReadOnly && (

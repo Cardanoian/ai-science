@@ -1,4 +1,3 @@
-// src/controllers/ResearchController.ts
 import { supabase } from '../lib/supabase';
 import { geminiAI } from '../services/GeminiService';
 import type {

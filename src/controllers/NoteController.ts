@@ -1,10 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type {
-  Note,
-  CreateNoteData,
-  UpdateNoteData,
-  NotePosition,
-} from '../models/types';
+import type { Note, CreateNoteData, UpdateNoteData } from '../models/types';
 import toast from 'react-hot-toast';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -183,26 +178,7 @@ export class NoteController {
       errors.push('보드 ID는 필수입니다.');
     }
 
-    if (data.x_position < 0 || data.y_position < 0) {
-      errors.push('노트 위치는 음수일 수 없습니다.');
-    }
-
     return errors;
-  }
-
-  // 노트 위치 계산
-  calculateNotePosition(
-    clickX: number,
-    clickY: number,
-    containerRect: DOMRect
-  ): NotePosition {
-    const noteWidth = 256; // 16rem = 256px
-    const noteHeight = 128; // 8rem = 128px
-
-    const x = Math.max(0, clickX - containerRect.left - noteWidth / 2);
-    const y = Math.max(0, clickY - containerRect.top - noteHeight / 2);
-
-    return { x, y };
   }
 
   // 랜덤 노트 색상 반환

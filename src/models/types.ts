@@ -33,8 +33,7 @@ export interface Note {
   id: string;
   board_id: string;
   content: string;
-  x_position: number;
-  y_position: number;
+  position: number;
   color: string;
   created_at: string;
   updated_at: string;
@@ -44,15 +43,13 @@ export interface Note {
 export interface CreateNoteData {
   board_id: string;
   content: string;
-  x_position: number;
-  y_position: number;
+  position: number;
   color: string;
 }
 
 export interface UpdateNoteData {
   content?: string;
-  x_position?: number;
-  y_position?: number;
+  position?: number;
   color?: string;
 }
 
@@ -114,14 +111,9 @@ export interface AppState {
   error: string | null;
 }
 
-export interface NotePosition {
-  x: number;
-  y: number;
-}
-
 export interface DragData {
   isDragging: boolean;
-  dragOffset: NotePosition;
+  dragOffset: { x: number; y: number };
 }
 
 // 모달 상태 타입
@@ -181,7 +173,7 @@ export interface ResearchStepContent {
   // 5단계: 탐구 발표 준비
   presentationSlides?: PresentationSlide[];
   presentationScript?: string;
-  generatedPresentationHtml?: string; // 추가: 생성된 HTML 프레젠테이션
+  generatedPresentationHtml?: string;
 
   // 6단계: 성찰하기
   whatLearned?: string;
@@ -317,6 +309,6 @@ export interface Notification {
 export interface NoteExportData {
   content: string;
   created: string;
-  position: NotePosition;
+  position: number;
   color: string;
 }

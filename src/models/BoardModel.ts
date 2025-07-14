@@ -188,7 +188,7 @@ export class BoardModel {
       notes: notes.map((note) => ({
         content: note.content,
         created: note.created_at,
-        position: { x: note.x_position, y: note.y_position },
+        position: { x: note.position, y: note.y_position },
       })),
       projects: projects.map((project) => ({
         title: project.title,

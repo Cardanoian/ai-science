@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Share2, Palette, Grid3X3, Zap, Plus } from 'lucide-react';
 import { useAppController } from '../contexts/AppControllerContext';
 import type { Board, Note } from '../models/types';
@@ -22,21 +22,24 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState('#fbbf24');
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showGrid, setShowGrid] = useState(false);
+  const [showGrid, setShowGrid] = useState(true); // 격자 기본 활성화
   const [showCreateModal, setShowCreateModal] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
+
+  // 드래그 앤 드롭 상태
+  const dragItem = useRef<number | null>(null); // 드래그 중인 노트의 인덱스
+  const dragOverItem = useRef<number | null>(null); // 드롭될 위치의 노트 인덱스
 
   // 데이터 로드
   useEffect(() => {
     const loadBoardData = async () => {
       try {
         setIsLoading(true);
-
-        // 탐구 노트 로드
         const notesData = await appController.noteController.getNotesByBoardId(
           board.id
         );
-        setNotes(notesData);
+        // position을 기준으로 정렬하여 초기 순서 설정
+        setNotes(notesData.sort((a, b) => a.position - b.position));
       } catch (error) {
         console.error('Failed to load board data:', error);
       } finally {
@@ -53,13 +56,23 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
       board.id,
       {
         onInsert: (note: Note) => {
-          setNotes((prev) => [...prev, note]);
+          setNotes((prev) =>
+            [...prev, note].sort((a, b) => a.position - b.position)
+          );
         },
         onUpdate: (note: Note) => {
-          setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n)));
+          setNotes((prev) =>
+            prev
+              .map((n) => (n.id === note.id ? note : n))
+              .sort((a, b) => a.position - b.position)
+          );
         },
         onDelete: (noteId: string) => {
-          setNotes((prev) => prev.filter((n) => n.id !== noteId));
+          setNotes((prev) =>
+            prev
+              .filter((n) => n.id !== noteId)
+              .sort((a, b) => a.position - b.position)
+          );
         },
       }
     );
@@ -73,21 +86,12 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
   };
 
   const handleConfirmCreate = async (content: string, color: string) => {
-    if (!boardRef.current) return;
-    const rect = boardRef.current.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const position = appController.noteController.calculateNotePosition(
-      centerX,
-      centerY,
-      rect
-    );
     try {
+      // 새 노트는 position을 현재 노트 개수로 설정하여 마지막에 추가되도록 함
       await appController.noteController.createNote({
         board_id: board.id,
         content,
-        x_position: Math.round(position.x),
-        y_position: Math.round(position.y),
+        position: notes.length, // 새로운 노트의 순서 (마지막)
         color,
       });
     } catch (error) {
@@ -100,10 +104,12 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
     setShowCreateModal(false);
   };
 
-  // 탐구 노트 업데이트
+  // 탐구 노트 업데이트 (position 제외)
   const handleNoteUpdate = async (noteId: string, updates: Partial<Note>) => {
     try {
-      await appController.noteController.updateNote(noteId, updates);
+      // position 업데이트는 드래그 앤 드롭 로직에서 처리
+      const { ...restUpdates } = updates;
+      await appController.noteController.updateNote(noteId, restUpdates);
     } catch (error) {
       console.error('Failed to update note:', error);
     }
@@ -113,7 +119,7 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
   const handleNoteDelete = async (noteId: string) => {
     try {
       await appController.noteController.deleteNote(noteId);
-      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      // setNotes는 subscribeToRealtimeChanges에서 처리되므로 여기서는 필요 없음
     } catch (error) {
       console.error('Failed to delete note:', error);
     }
@@ -128,6 +134,75 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
   const handleShare = () => {
     appController.classController.copyShareUrl(board.class_code);
   };
+
+  // 드래그 시작
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, position: number) => {
+      dragItem.current = position;
+      e.dataTransfer.effectAllowed = 'move';
+      // 드래그 이미지 설정 (선택 사항)
+      const img = new Image();
+      img.src =
+        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // 투명 이미지
+      e.dataTransfer.setDragImage(img, 0, 0);
+    },
+    []
+  );
+
+  // 드래그 오버
+  const handleDragOver = useCallback((e: React.DragEvent, position: number) => {
+    e.preventDefault();
+    dragOverItem.current = position;
+  }, []);
+
+  // 드롭
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      const draggedIndex = dragItem.current;
+      const droppedIndex = dragOverItem.current;
+
+      if (
+        draggedIndex === null ||
+        droppedIndex === null ||
+        draggedIndex === droppedIndex
+      ) {
+        return;
+      }
+
+      const newNotes = [...notes];
+      const [draggedNote] = newNotes.splice(draggedIndex, 1);
+      newNotes.splice(droppedIndex, 0, draggedNote);
+
+      // 순서 변경 후 position 업데이트
+      const updatedNotes = newNotes.map((note, index) => ({
+        ...note,
+        position: index,
+      }));
+
+      setNotes(updatedNotes);
+
+      // 데이터베이스 업데이트
+      try {
+        // 모든 노트의 position을 업데이트
+        await Promise.all(
+          updatedNotes.map((note) =>
+            appController.noteController.updateNote(note.id, {
+              position: note.position,
+            })
+          )
+        );
+      } catch (error) {
+        console.error('Failed to update note positions:', error);
+        // 에러 발생 시 이전 상태로 롤백 (선택 사항)
+        // setNotes(notes);
+      }
+
+      dragItem.current = null;
+      dragOverItem.current = null;
+    },
+    [notes, appController.noteController]
+  );
 
   if (isLoading) {
     return (
@@ -285,9 +360,9 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
       <div className='flex-1 min-h-0 relative overflow-hidden'>
         <div
           ref={boardRef}
-          className={`relative w-full h-full min-h-full ${
+          className={`w-full h-full min-h-full p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-min ${
             showGrid ? 'bg-grid-pattern' : ''
-          } overflow-y-auto`}
+          } overflow-y-auto justify-items-center`}
           style={{
             backgroundColor: board.background_color,
             backgroundImage: showGrid
@@ -297,7 +372,7 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
           }}
         >
           {/* 탐구 노트들 */}
-          {notes.map((note) => (
+          {notes.map((note, index) => (
             <NoteCard
               key={note.id}
               note={note}
@@ -306,6 +381,10 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
               onClick={() => handleNoteClick(note.id)}
               isReadOnly={false}
               teacherId={board.teacher_id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={handleDrop}
             />
           ))}
 
