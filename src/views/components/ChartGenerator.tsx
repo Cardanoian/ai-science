@@ -22,6 +22,7 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts';
 
 interface ChartData {
@@ -190,7 +191,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           <ResponsiveContainer {...commonProps}>
             <BarChart
               data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 40, right: 30, left: 20, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray='3 3' />
               <XAxis
@@ -207,7 +208,17 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 ]}
               />
               <Tooltip />
-              <Bar dataKey='value' fill={colors[0]} />
+              <Bar dataKey='value' fill={colors[0]}>
+                <LabelList
+                  dataKey='value'
+                  position='top'
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    fill: '#374151',
+                  }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         );
@@ -217,7 +228,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           <ResponsiveContainer {...commonProps}>
             <RechartsLineChart
               data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 40, right: 30, left: 20, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray='3 3' />
               <XAxis
@@ -240,7 +251,17 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 stroke={colors[1]}
                 strokeWidth={3}
                 dot={{ fill: colors[1], strokeWidth: 2, r: 6 }}
-              />
+              >
+                <LabelList
+                  dataKey='value'
+                  position='top'
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    fill: '#374151',
+                  }}
+                />
+              </Line>
             </RechartsLineChart>
           </ResponsiveContainer>
         );
@@ -254,8 +275,8 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 cx='50%'
                 cy='50%'
                 labelLine={false}
-                label={({ name, percent }) =>
-                  `${name}: ${(percent * 100).toFixed(0)}%`
+                label={({ name, value, percent }) =>
+                  `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
                 }
                 outerRadius={80}
                 fill='#8884d8'
