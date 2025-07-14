@@ -96,14 +96,15 @@ const NoteCard: React.FC<NoteCardProps> = ({
     const now = new Date();
     const updated = new Date(note.updated_at);
     const diffMs = now.getTime() - updated.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffSeconds = Math.round(diffMs / 1000);
+    const diffMins = Math.round(diffSeconds / 60);
+    const diffHours = Math.round(diffMins / 60);
+    const diffDays = Math.round(diffHours / 24);
 
-    if (diffDays > 0) return `${diffDays}일 전`;
-    if (diffHours > 0) return `${diffHours}시간 전`;
-    if (diffMins > 0) return `${diffMins}분 전`;
-    return '방금 전';
+    if (diffSeconds < 60) return `방금 전`;
+    if (diffMins < 60) return `${diffMins}분 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
+    return `${diffDays}일 전`;
   };
 
   return (

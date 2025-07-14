@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { ResearchController } from '../../controllers/ResearchController';
 
-// 각 단계별 컴포넌트 import
 import Step1Component from './research-steps/Step1Component';
 import Step2Component from './research-steps/Step2Component';
 import Step3Component from './research-steps/Step3Component';
@@ -17,10 +16,11 @@ interface ResearchStepsProps {
   onDataChange: (data: Partial<ResearchStepContent>) => void;
   onSave: (data: Partial<ResearchStepContent>, completed?: boolean) => void;
   onAIHelp: (question: string, context?: Partial<ResearchStepContent>) => void;
-  onGeneratePresentation: () => void; // 추가
-  onViewPresentation: () => void; // 추가
-  researchController: ResearchController;
+  onGeneratePresentation: () => void;
+  onViewPresentation: () => void;
+  researchController?: ResearchController;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const ResearchSteps: React.FC<ResearchStepsProps> = ({
@@ -29,10 +29,11 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
   onDataChange,
   onSave,
   onAIHelp,
-  onGeneratePresentation, // 추가
-  onViewPresentation, // 추가
+  onGeneratePresentation,
+  onViewPresentation,
   researchController,
   isAIRequesting,
+  isTutorial = false,
 }) => {
   const [localData, setLocalData] = useState(stepData);
 
@@ -82,6 +83,7 @@ const ResearchSteps: React.FC<ResearchStepsProps> = ({
     onViewPresentation,
     researchController,
     isAIRequesting,
+    isTutorial,
   };
 
   // 단계별 컴포넌트 렌더링

@@ -18,6 +18,7 @@ interface Step1ComponentProps {
   onAIHelp: (question: string, context?: Step1LocalData) => void;
   researchController: ResearchController;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const Step1Component: React.FC<Step1ComponentProps> = ({
@@ -29,6 +30,7 @@ const Step1Component: React.FC<Step1ComponentProps> = ({
   onAIHelp,
   researchController,
   isAIRequesting,
+  isTutorial,
 }) => {
   const [showTopicRecommendations, setShowTopicRecommendations] =
     useState(false);
@@ -44,6 +46,28 @@ const Step1Component: React.FC<Step1ComponentProps> = ({
 
   // AI 주제 추천 요청
   const handleGetTopicRecommendations = async () => {
+    if (isTutorial) {
+      // 튜토리얼 모드에서는 AI 추천 기능을 사용하지 않습니다.
+      const dummyTopics = [
+        {
+          title: '식물은 어떤 색깔 빛에서 가장 잘 자랄까?',
+          description:
+            '다양한 색깔의 셀로판지를 이용해 빛의 색깔이 식물 성장에 미치는 영향을 탐구합니다.',
+          difficulty: '쉬움',
+          materials: ['강낭콩', '화분', '셀로판지'],
+        },
+        {
+          title: '물의 온도에 따라 소금은 얼마나 빨리 녹을까?',
+          description:
+            '온도가 다른 물에 소금을 녹여보며 용해 속도를 비교하는 실험입니다.',
+          difficulty: '쉬움',
+          materials: ['소금', '물', '온도계'],
+        },
+      ];
+      setAiTopics(dummyTopics);
+      setShowTopicRecommendations(true);
+      return;
+    }
     try {
       setIsLoadingTopics(true);
       const interests = localData.interests || [];
@@ -204,12 +228,13 @@ const Step1Component: React.FC<Step1ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
-        disabled={isAIRequesting}
+        disabled={isAIRequesting || isTutorial}
         onClick={() =>
+          !isTutorial &&
           onAIHelp('주제 선택에 대한 피드백을 받고 싶어요', localData)
         }
         className={`w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2${
-          isAIRequesting ? 'opacity-50 cursor-not-allowed' : ''
+          isAIRequesting || isTutorial ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
         <Bot className='w-5 h-5' />

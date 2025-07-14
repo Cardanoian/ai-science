@@ -23,6 +23,7 @@ interface Step6ComponentProps {
   onAIHelp: (question: string, context?: Step6LocalData) => void;
   onSave: (data: Step6LocalData, completed?: boolean) => void;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const Step6Component: React.FC<Step6ComponentProps> = ({
@@ -31,6 +32,7 @@ const Step6Component: React.FC<Step6ComponentProps> = ({
   onAIHelp,
   onSave,
   isAIRequesting,
+  isTutorial,
 }) => {
   return (
     <div className='space-y-6'>
@@ -154,8 +156,9 @@ const Step6Component: React.FC<Step6ComponentProps> = ({
         </p>
         <div className='flex justify-center space-x-3'>
           <button
-            onClick={() => onSave(localData, true)}
-            className='px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center space-x-2'
+            onClick={() => !isTutorial && onSave(localData, true)}
+            disabled={isTutorial}
+            className='px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed'
           >
             <Save className='w-4 h-4' />
             <span>탐구 완료로 저장</span>
@@ -165,10 +168,14 @@ const Step6Component: React.FC<Step6ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
+        disabled={isAIRequesting || isTutorial}
         onClick={() =>
+          !isTutorial &&
           onAIHelp('탐구 과정을 돌아보며 성찰해보고 싶어요', localData)
         }
-        className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
+        className={`w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2 ${
+          isAIRequesting || isTutorial ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
         <Bot className='w-5 h-5' />
         <span>

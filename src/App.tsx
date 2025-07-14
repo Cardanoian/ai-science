@@ -10,12 +10,21 @@ import DashboardView from './views/DashboardView';
 import BoardView from './views/BoardView';
 import ResearchView from './views/ResearchView';
 import LoadingView from './views/LoadingView';
+import TutorialView from './views/TutorialView';
+import { SCIENCE_TOPICS } from './constants/topics';
 
 // 앱 상태 타입
 interface AppState {
-  currentView: 'welcome' | 'dashboard' | 'board' | 'research' | 'loading';
+  currentView:
+    | 'welcome'
+    | 'dashboard'
+    | 'board'
+    | 'research'
+    | 'loading'
+    | 'tutorial';
   currentBoard: Board | null;
   currentNoteId: string | null;
+  currentTopic: (typeof SCIENCE_TOPICS)[0] | null;
   isInitialized: boolean;
 }
 
@@ -31,6 +40,7 @@ const App: React.FC = () => {
     currentView: 'loading',
     currentBoard: null,
     currentNoteId: null,
+    currentTopic: null,
     isInitialized: false,
   });
 
@@ -141,6 +151,14 @@ const App: React.FC = () => {
       }));
     }, []),
 
+    toTutorial: useCallback((topic: (typeof SCIENCE_TOPICS)[0]) => {
+      setAppState((prev) => ({
+        ...prev,
+        currentView: 'tutorial',
+        currentTopic: topic,
+      }));
+    }, []),
+
     back: useCallback(() => {
       setAppState((prev) => {
         if (prev.currentView === 'research') {
@@ -149,6 +167,8 @@ const App: React.FC = () => {
           return authState.isAuthenticated && authState.profile
             ? { ...prev, currentView: 'dashboard', currentBoard: null }
             : { ...prev, currentView: 'welcome' };
+        } else if (prev.currentView === 'tutorial') {
+          return { ...prev, currentView: 'welcome', currentTopic: null };
         } else {
           return { ...prev, currentView: 'welcome' };
         }
@@ -169,6 +189,14 @@ const App: React.FC = () => {
           <WelcomeView
             appController={appController}
             authState={authState}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'tutorial':
+        return (
+          <TutorialView
+            topic={appState.currentTopic!}
             onNavigate={handleNavigate}
           />
         );

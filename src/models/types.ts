@@ -154,7 +154,11 @@ export interface ResearchStepContent {
   // 2단계: 탐구 질문과 가설
   observations?: string[];
   researchQuestion?: string;
-  hypothesis?: string;
+  hypothesis?: {
+    condition?: string;
+    prediction?: string;
+  };
+  hypothesisReason?: string;
 
   // 3단계: 실험 계획하기
   materials?: string[];
@@ -167,20 +171,27 @@ export interface ResearchStepContent {
   safetyPrecautions?: string[];
 
   // 4단계: 결과 정리 및 결론
-  experimentResults?: unknown[];
-  dataAnalysis?: string;
+  experimentResults?: string;
+  chartData?: ChartData;
+  hypothesisResult?: 'supported' | 'rejected' | 'inconclusive';
+  hypothesisExplanation?: string;
   conclusion?: string;
 
   // 5단계: 탐구 발표 준비
-  presentationSlides?: PresentationSlide[];
+  presentationTitle?: string;
+  presentationSlides?: { [key: string]: string };
   presentationScript?: string;
   generatedPresentationHtml?: string;
 
   // 6단계: 성찰하기
   whatLearned?: string;
   challenges?: string;
-  improvements?: string;
+  newLearnings?: string;
   nextResearch?: string;
+  aiExperience?: {
+    positive: string;
+    improvement: string;
+  };
 }
 
 export interface PresentationSlide {

@@ -19,6 +19,7 @@ interface Step2ComponentProps {
   onUpdateItem: (key: string, index: number, value: unknown) => void;
   onAIHelp: (question: string, context?: Step2LocalData) => void;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const Step2Component: React.FC<Step2ComponentProps> = ({
@@ -29,6 +30,7 @@ const Step2Component: React.FC<Step2ComponentProps> = ({
   onUpdateItem,
   onAIHelp,
   isAIRequesting,
+  isTutorial,
 }) => {
   return (
     <div className='space-y-6'>
@@ -156,11 +158,14 @@ const Step2Component: React.FC<Step2ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
-        disabled={isAIRequesting}
+        disabled={isAIRequesting || isTutorial}
         onClick={() =>
+          !isTutorial &&
           onAIHelp('탐구 질문과 가설에 대한 피드백을 받고 싶어요', localData)
         }
-        className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
+        className={`w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2 ${
+          isAIRequesting || isTutorial ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
         <Bot className='w-5 h-5' />
         <span>

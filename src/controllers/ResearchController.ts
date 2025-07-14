@@ -62,17 +62,38 @@ export class ResearchController {
     updates: Partial<ResearchProject>
   ): Promise<ResearchProject> {
     try {
-      const { data, error } = await supabase
+      const timestamp = new Date().toISOString();
+
+      // 먼저 프로젝트를 조회하여 note_id를 확보합니다.
+      const { data: projectData, error: fetchError } = await supabase
+        .from('research_projects')
+        .select('note_id')
+        .eq('id', projectId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!projectData) throw new Error('Project not found');
+
+      const { data, error: updateError } = await supabase
         .from('research_projects')
         .update({
           ...updates,
-          updated_at: new Date().toISOString(),
+          updated_at: timestamp,
         })
         .eq('id', projectId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // 확보된 note_id를 사용하여 노트를 업데이트합니다.
+      await supabase
+        .from('notes')
+        .update({
+          updated_at: timestamp,
+        })
+        .eq('id', projectData.note_id);
+
       return data;
     } catch (error) {
       console.error('Error updating project:', error);
@@ -131,41 +152,38 @@ export class ResearchController {
         [stepNumber]: content,
       };
 
+      const timestamp = new Date().toISOString();
+
       // all_steps 필드 업데이트
       const { error: updateProjectError } = await supabase
         .from('research_projects')
         .update({
           all_steps: updatedAllSteps,
           current_step: Math.max(stepNumber, 1),
-          updated_at: new Date().toISOString(),
+          updated_at: timestamp,
         })
         .eq('id', projectId);
 
       if (updateProjectError) throw updateProjectError;
 
-      // 1단계 최종 탐구 주제 작성 시 노트 제목 업데이트
-      if (stepNumber === 1 && content.selectedTopic) {
-        try {
-          const { data: proj } = await supabase
-            .from('research_projects')
-            .select('note_id')
-            .eq('id', projectId)
-            .single();
-          const noteId = proj?.note_id;
-          if (noteId) {
-            await supabase
-              .from('notes')
-              .update({
-                content: content.selectedTopic,
-              })
-              .eq('id', noteId);
-          }
-        } catch (err) {
-          console.error(
-            'Error updating note content with selected topic:',
-            err
-          );
+      // note_id를 조회하여 note를 업데이트합니다.
+      const { data: proj } = await supabase
+        .from('research_projects')
+        .select('note_id')
+        .eq('id', projectId)
+        .single();
+
+      if (proj?.note_id) {
+        const noteUpdates: { updated_at: string; content?: string } = {
+          updated_at: timestamp,
+        };
+
+        // 1단계 최종 탐구 주제 작성 시 노트 제목도 함께 업데이트
+        if (stepNumber === 1 && content.selectedTopic) {
+          noteUpdates.content = content.selectedTopic;
         }
+
+        await supabase.from('notes').update(noteUpdates).eq('id', proj.note_id);
       }
 
       return content;
@@ -182,16 +200,26 @@ export class ResearchController {
     allContent: Record<number, ResearchStepContent | null>
   ): Promise<ResearchProject> {
     try {
+      const timestamp = new Date().toISOString();
       const { data, error } = await supabase
         .from('research_projects')
         .update({
           all_steps: allContent,
-          updated_at: new Date().toISOString(),
+          updated_at: timestamp,
         })
         .eq('id', projectId)
         .select()
         .single();
+
       if (error) throw error;
+
+      await supabase
+        .from('notes')
+        .update({
+          updated_at: timestamp,
+        })
+        .eq('id', data.note_id);
+
       // toast.success('전체 단계 데이터가 저장되었습니다.');
       return data;
     } catch (error) {

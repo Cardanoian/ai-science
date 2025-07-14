@@ -104,12 +104,10 @@ const BoardView: React.FC<BoardViewProps> = ({ board, onNavigate }) => {
     setShowCreateModal(false);
   };
 
-  // 탐구 노트 업데이트 (position 제외)
+  // 탐구 노트 업데이트
   const handleNoteUpdate = async (noteId: string, updates: Partial<Note>) => {
     try {
-      // position 업데이트는 드래그 앤 드롭 로직에서 처리
-      const { ...restUpdates } = updates;
-      await appController.noteController.updateNote(noteId, restUpdates);
+      await appController.noteController.updateNote(noteId, updates);
     } catch (error) {
       console.error('Failed to update note:', error);
     }

@@ -66,10 +66,7 @@ export class NoteController {
 
       const { data, error } = await supabase
         .from('notes')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single();

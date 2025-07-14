@@ -4,11 +4,11 @@ import ChartGenerator from '../ChartGenerator';
 import type { ChartData } from '../../../models/types';
 
 export interface Step4LocalData {
-  experimentResults: string;
+  experimentResults?: string;
   chartData?: ChartData;
-  hypothesisResult: string;
-  hypothesisExplanation: string;
-  conclusion: string;
+  hypothesisResult?: 'supported' | 'rejected' | 'inconclusive';
+  hypothesisExplanation?: string;
+  conclusion?: string;
 }
 
 interface Step4ComponentProps {
@@ -19,6 +19,7 @@ interface Step4ComponentProps {
   ) => void;
   onAIHelp: (question: string, context?: Step4LocalData) => void;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const Step4Component: React.FC<Step4ComponentProps> = ({
@@ -26,6 +27,7 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
   onDataChange,
   onAIHelp,
   isAIRequesting,
+  isTutorial,
 }) => {
   return (
     <div className='space-y-6'>
@@ -78,13 +80,21 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
             가설 검증 결과:
           </label>
           <div className='flex space-x-4'>
-            {['맞았다', '부분적으로 맞았다', '틀렸다'].map((option) => (
+            {[
+              { value: 'supported', label: '가설이 맞았어요', icon: Circle },
+              { value: 'rejected', label: '가설이 틀렸어요', icon: X },
+              {
+                value: 'inconclusive',
+                label: '애매해요',
+                icon: Triangle,
+              },
+            ].map((option) => (
               <label
-                key={option}
+                key={option.value}
                 className={`
                   flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer transition-all duration-200
                   ${
-                    localData.hypothesisResult === option
+                    localData.hypothesisResult === option.value
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }
@@ -94,23 +104,18 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
                 <input
                   type='radio'
                   name='hypothesisResult'
-                  value={option}
-                  checked={localData.hypothesisResult === option}
+                  value={option.value}
+                  checked={localData.hypothesisResult === option.value}
                   onChange={(e) =>
-                    onDataChange('hypothesisResult', e.target.value)
+                    onDataChange(
+                      'hypothesisResult',
+                      e.target.value as Step4LocalData['hypothesisResult']
+                    )
                   }
                   className='hidden'
                 />
-                <span className='text-sm hidden md:inline'>{option}</span>
-                <span className='text-sm md:hidden'>
-                  {option === '맞았다' ? (
-                    <Circle className='w-5 h-5' />
-                  ) : option === '부분적으로 맞았다' ? (
-                    <Triangle className='w-5 h-5' />
-                  ) : (
-                    <X className='w-5 h-5' />
-                  )}
-                </span>
+                <option.icon className='w-5 h-5' />
+                <span className='text-sm hidden md:inline'>{option.label}</span>
               </label>
             ))}
           </div>
@@ -139,9 +144,13 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
 
       {/* AI 도움 버튼 */}
       <button
-        disabled={isAIRequesting}
-        onClick={() => onAIHelp('실험 결과 분석에 도움이 필요해요', localData)}
-        className='w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
+        disabled={isAIRequesting || isTutorial}
+        onClick={() =>
+          !isTutorial && onAIHelp('실험 결과 분석에 도움이 필요해요', localData)
+        }
+        className={`w-full px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2 ${
+          isAIRequesting || isTutorial ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
         <Bot className='w-5 h-5' />
         <span>

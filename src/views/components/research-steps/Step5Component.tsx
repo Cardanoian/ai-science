@@ -18,6 +18,7 @@ interface Step5ComponentProps {
   onGeneratePresentation: () => void;
   onViewPresentation: () => void;
   isAIRequesting: boolean;
+  isTutorial?: boolean;
 }
 
 const Step5Component: React.FC<Step5ComponentProps> = ({
@@ -27,6 +28,7 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
   onGeneratePresentation,
   onViewPresentation,
   isAIRequesting,
+  isTutorial,
 }) => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 
@@ -152,8 +154,9 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
       {/* 발표 자료 생성/보기 버튼 */}
       <div className='flex space-x-3'>
         <button
-          onClick={onGeneratePresentation}
-          className='flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center space-x-2'
+          onClick={() => !isTutorial && onGeneratePresentation()}
+          disabled={isTutorial}
+          className='flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <Sparkles className='w-5 h-5' />
           <span>{isMobile ? '자료 만들기' : '발표자료 만들기'}</span>
@@ -184,11 +187,14 @@ const Step5Component: React.FC<Step5ComponentProps> = ({
       {/* AI 도움 버튼 */}
       <div className='flex space-x-3'>
         <button
-          disabled={isAIRequesting}
+          disabled={isAIRequesting || isTutorial}
           onClick={() =>
+            !isTutorial &&
             onAIHelp('발표 대본을 더 좋게 만들고 싶어요', localData)
           }
-          className='flex-1 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2'
+          className={`flex-1 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2 ${
+            isAIRequesting || isTutorial ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           <Bot className='w-5 h-5' />
           <span>

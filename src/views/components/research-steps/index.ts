@@ -1,4 +1,3 @@
-// src/components/research-steps/index.ts
 export { default as Step1Component } from './Step1Component';
 export { default as Step2Component } from './Step2Component';
 export { default as Step3Component } from './Step3Component';
