@@ -14,7 +14,9 @@ const PresentationModal: React.FC<PresentationModalProps> = ({
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4'>
       <div className='bg-white rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col'>
         <div className='flex justify-between items-center p-4 border-b border-gray-200'>
-          <h2 className='text-xl font-bold text-gray-800'>발표자료 미리보기</h2>
+          <h2 className='text-xl sm:text-md font-bold text-gray-800'>
+            발표자료 미리보기
+          </h2>
           <button
             onClick={onClose}
             className='p-2 rounded-full hover:bg-gray-100 transition-colors'

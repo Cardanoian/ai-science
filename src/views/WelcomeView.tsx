@@ -179,7 +179,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 setLoginMode('signup');
                 setShowLoginModal(true);
               }}
-              className='px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2'
+              className='px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-lg font-semibold w-60 hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2'
             >
               <GraduationCap className='w-5 h-5' />
               <span>교사로 시작하기</span>
@@ -188,7 +188,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
             <button
               onClick={() => setShowJoinClassModal(true)}
-              className='px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl text-lg font-semibold hover:border-blue-500 hover:text-blue-600 transition-all flex items-center space-x-2'
+              className='px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl text-lg font-semibold w-60 hover:border-blue-500 hover:text-blue-600 transition-all flex items-center space-x-2'
             >
               <Users className='w-5 h-5' />
               <span>학생으로 참여하기</span>
