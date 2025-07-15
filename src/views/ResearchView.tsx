@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
-  Search,
-  Lightbulb,
-  FlaskConical,
-  BarChart3,
-  Presentation,
-  Heart,
   ChevronRight,
   ChevronLeft,
   Save,
@@ -26,6 +20,7 @@ import AIChat from './components/AIChat';
 import { supabase } from '../lib/supabase';
 import PresentationModal from './components/PresentationModal';
 import toast from 'react-hot-toast';
+import RESEARCH_STEPS from '../constants/researchSteps';
 
 interface ResearchViewProps {
   appController: AppController;
@@ -36,53 +31,6 @@ interface ResearchViewProps {
     toBoard: (board: Board) => void;
   };
 }
-
-// 탐구 단계 정의
-const RESEARCH_STEPS = [
-  {
-    id: 1,
-    title: '탐구 주제 찾기',
-    description: '관심 있는 현상을 관찰하고 탐구할 주제를 선정합니다.',
-    icon: Search,
-    color: 'bg-blue-500',
-  },
-  {
-    id: 2,
-    title: '탐구 질문과 가설',
-    description:
-      '관찰한 현상에 대한 질문을 만들고 예상 답안을 가설로 세웁니다.',
-    icon: Lightbulb,
-    color: 'bg-yellow-500',
-  },
-  {
-    id: 3,
-    title: '실험 계획하기',
-    description: '가설을 검증하기 위한 실험을 구체적으로 계획합니다.',
-    icon: FlaskConical,
-    color: 'bg-green-500',
-  },
-  {
-    id: 4,
-    title: '결과 정리 및 결론',
-    description: '실험 결과를 정리하고 분석하여 결론을 도출합니다.',
-    icon: BarChart3,
-    color: 'bg-purple-500',
-  },
-  {
-    id: 5,
-    title: '탐구 발표 준비',
-    description: '탐구 과정과 결과를 다른 사람들에게 발표할 자료를 준비합니다.',
-    icon: Presentation,
-    color: 'bg-orange-500',
-  },
-  {
-    id: 6,
-    title: '성찰하기',
-    description: '탐구 과정을 돌아보고 배운 점과 개선점을 정리합니다.',
-    icon: Heart,
-    color: 'bg-pink-500',
-  },
-];
 
 const ResearchView: React.FC<ResearchViewProps> = ({
   appController,
@@ -302,35 +250,6 @@ const ResearchView: React.FC<ResearchViewProps> = ({
     return Math.round((currentStep / 6) * 100);
   };
 
-  // 프로젝트 내보내기
-  // const handleExport = async () => {
-  //   if (!project) return;
-
-  //   try {
-  //     const exportData = {
-  //       project,
-  //       steps: stepData,
-  //       timestamp: new Date().toISOString(),
-  //     };
-
-  //     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-  //       type: 'application/json',
-  //     });
-
-  //     const url = URL.createObjectURL(blob);
-  //     const link = document.createElement('a');
-  //     link.href = url;
-  //     link.download = `${project.title || '탐구프로젝트'}_${
-  //       new Date().toISOString().split('T')[0]
-  //     }.json`;
-  //     link.click();
-
-  //     URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error('Failed to export project:', error);
-  //   }
-  // };
-
   // 발표자료 생성
   const handleGeneratePresentation = async () => {
     if (!project) return;
@@ -361,10 +280,10 @@ const ResearchView: React.FC<ResearchViewProps> = ({
           generatedPresentationHtml: generatedHtml,
         };
         setStepData((prev) => ({ ...prev, [5]: updatedStep5Data }));
-        await handleSaveStep(5, updatedStep5Data); // Supabase에 저장
+        await handleSaveStep(5, updatedStep5Data);
 
         setPresentationHtml(generatedHtml);
-        setShowPresentationModal(true); // 모달 표시
+        setShowPresentationModal(true);
         toast.success('발표자료가 성공적으로 생성되었습니다!');
       } else {
         toast.error('발표자료 생성에 실패했습니다.');
