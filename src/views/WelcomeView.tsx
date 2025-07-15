@@ -191,7 +191,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               className='px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl text-lg font-semibold hover:border-blue-500 hover:text-blue-600 transition-all flex items-center space-x-2'
             >
               <Users className='w-5 h-5' />
-              <span>수업 참여하기</span>
+              <span>학생으로 참여하기</span>
             </button>
           </div>
         </div>
