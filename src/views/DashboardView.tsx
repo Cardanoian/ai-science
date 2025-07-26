@@ -316,7 +316,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           onClose={() => setShowProfileEditModal(false)}
           onSuccess={(updatedProfile) => {
             // AuthController에서 이미 상태를 업데이트하므로 여기서는 추가 작업 불필요
-            console.log('프로필 업데이트 성공:', updatedProfile);
+            console.log(
+              `프로필 업데이트 성공! 이름: ${updatedProfile.display_name}, 학교: ${updatedProfile.school}`
+            );
           }}
           authController={appController.authController}
           currentProfile={authState.profile}
