@@ -2,9 +2,11 @@ import { supabase } from '../lib/supabase';
 import { geminiAI } from '../services/GeminiService';
 import type {
   ResearchProject,
-  ExperimentData,
   ResearchStepContent,
   ResearchTopicRecommendation,
+  ChartData,
+  LegacyChartData,
+  ChartSeries,
 } from '../models/types';
 import type { ExperimentPlan } from '../services/GeminiService';
 import toast from 'react-hot-toast';
@@ -134,6 +136,21 @@ export class ResearchController {
     content: ResearchStepContent
   ): Promise<ResearchStepContent> {
     try {
+      // 4단계 차트 데이터 검증 및 정리
+      if (stepNumber === 4 && content.chartData) {
+        console.log('Saving chart data:', content.chartData);
+
+        // 차트 데이터가 새로운 구조인지 확인
+        const chartData = content.chartData as ChartData;
+        if (!chartData.series || !Array.isArray(chartData.series)) {
+          console.warn('Chart data missing series, attempting migration');
+          const migratedData = this.migrateChartData(chartData);
+          if (migratedData) {
+            content.chartData = migratedData;
+          }
+        }
+      }
+
       // 현재 프로젝트의 all_steps 데이터 조회
       const { data: project, error: fetchError } = await supabase
         .from('research_projects')
@@ -154,6 +171,8 @@ export class ResearchController {
 
       const timestamp = new Date().toISOString();
 
+      console.log(`Saving step ${stepNumber} data:`, content);
+
       // all_steps 필드 업데이트
       const { error: updateProjectError } = await supabase
         .from('research_projects')
@@ -164,7 +183,10 @@ export class ResearchController {
         })
         .eq('id', projectId);
 
-      if (updateProjectError) throw updateProjectError;
+      if (updateProjectError) {
+        console.error('Database update error:', updateProjectError);
+        throw updateProjectError;
+      }
 
       // note_id를 조회하여 note를 업데이트합니다.
       const { data: proj } = await supabase
@@ -186,6 +208,7 @@ export class ResearchController {
         await supabase.from('notes').update(noteUpdates).eq('id', proj.note_id);
       }
 
+      console.log(`Step ${stepNumber} data saved successfully`);
       return content;
     } catch (error) {
       console.error('Error saving step data:', error);
@@ -293,55 +316,6 @@ export class ResearchController {
     }
   }
 
-  // 차트 데이터 생성
-  async createExperimentData(
-    projectId: string,
-    dataType: string,
-    title: string,
-    data: Record<string, unknown>
-  ): Promise<ExperimentData> {
-    try {
-      const { data: result, error } = await supabase
-        .from('experiment_data')
-        .insert([
-          {
-            project_id: projectId,
-            data_type: dataType,
-            title,
-            data,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // toast.success('실험 데이터가 저장되었습니다.');
-      return result;
-    } catch (error) {
-      console.error('Error creating experiment data:', error);
-      toast.error('데이터 저장에 실패했습니다.');
-      throw error;
-    }
-  }
-
-  // 프로젝트의 실험 데이터 조회
-  async getExperimentData(projectId: string): Promise<ExperimentData[]> {
-    try {
-      const { data, error } = await supabase
-        .from('experiment_data')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching experiment data:', error);
-      return [];
-    }
-  }
-
   // 발표 대본 생성
   async generatePresentationScript(
     projectData: Record<string, unknown>
@@ -393,6 +367,79 @@ export class ResearchController {
       return '질문 개선 중 오류가 발생했습니다.';
     }
   }
+  // 주제와 관련된 과학 개념 반환
+  async getConceptsRelatedToTopic(topic: string): Promise<string[]> {
+    const { concepts } = await geminiAI.fetchConcepts({
+      topic,
+      studentLevel: '초등학교',
+    });
+    return concepts;
+  }
+
+  // 차트 데이터 호환성 처리 - 레거시 데이터를 새 구조로 변환
+  private migrateChartData(chartData: unknown): ChartData | null {
+    if (!chartData || typeof chartData !== 'object') {
+      return null;
+    }
+
+    const data = chartData as Record<string, unknown>;
+
+    // 이미 새로운 구조인 경우
+    if (data.series && Array.isArray(data.series)) {
+      return data as unknown as ChartData;
+    }
+
+    // 레거시 구조인 경우 변환
+    if (data.data && Array.isArray(data.data)) {
+      const legacyData = data as unknown as LegacyChartData;
+
+      // 기본 시리즈 생성
+      const defaultSeries: ChartSeries = {
+        name: '시리즈 1',
+        color: '#3b82f6',
+      };
+
+      // 레거시 데이터를 새 구조로 변환
+      const newData = legacyData.data.map((point) => ({
+        name: point.name,
+        [defaultSeries.name]: [point.value],
+      }));
+
+      return {
+        id: legacyData.id,
+        type: legacyData.type,
+        title: legacyData.title,
+        xAxisLabel: legacyData.xAxisLabel,
+        yAxisLabel: legacyData.yAxisLabel,
+        series: [defaultSeries],
+        data: newData,
+      };
+    }
+
+    return null;
+  }
+
+  // 단계 데이터 조회 시 차트 데이터 호환성 처리
+  async getStepDataWithMigration(
+    projectId: string,
+    stepNumber: number
+  ): Promise<ResearchStepContent | null> {
+    try {
+      const stepData = await this.getStepData(projectId, stepNumber);
+
+      if (stepData && stepData.chartData) {
+        const migratedChartData = this.migrateChartData(stepData.chartData);
+        if (migratedChartData) {
+          stepData.chartData = migratedChartData;
+        }
+      }
+
+      return stepData;
+    } catch (error) {
+      console.error('Error fetching step data with migration:', error);
+      return null;
+    }
+  }
 
   // 기본 주제 제공 (AI 실패 시)
   private getFallbackTopics(): ResearchTopicRecommendation[] {
@@ -431,57 +478,5 @@ export class ResearchController {
         concepts: ['진동', '파동', '주파수'],
       },
     ];
-  }
-
-  // 주제와 관련된 과학 개념 반환
-  async getConceptsRelatedToTopic(topic: string): Promise<string[]> {
-    const { concepts } = await geminiAI.fetchConcepts({
-      topic,
-      studentLevel: '초등학교',
-    });
-    return concepts;
-  }
-
-  // CSV 데이터 내보내기
-  exportDataAsCSV(data: Record<string, unknown>[], filename: string): void {
-    try {
-      if (!data || data.length === 0) {
-        toast.error('내보낼 데이터가 없습니다.');
-        return;
-      }
-
-      const headers = Object.keys(data[0]);
-      const csvContent = [
-        headers.join(','),
-        ...data.map((row) =>
-          headers
-            .map((header) => {
-              const value = row[header];
-              return typeof value === 'string' && value.includes(',')
-                ? `"${value}"`
-                : value;
-            })
-            .join(',')
-        ),
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${filename}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      toast.success('데이터가 다운로드되었습니다.');
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      toast.error('데이터 내보내기에 실패했습니다.');
-    }
   }
 }

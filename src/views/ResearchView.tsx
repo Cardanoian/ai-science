@@ -104,14 +104,25 @@ const ResearchView: React.FC<ResearchViewProps> = ({
           console.error('AI 채팅 메시지 불러오기 오류:', e);
         }
 
-        // 각 단계 데이터 로드
+        // 각 단계 데이터 로드 (4단계는 호환성 처리 메서드 사용)
         const allStepData: Record<number, ResearchStepContent> = {};
         for (let i = 1; i <= 6; i++) {
-          const stepInfo: ResearchStepContent | null =
-            await appController.researchController.getStepData(
+          let stepInfo: ResearchStepContent | null;
+
+          if (i === 4) {
+            // 4단계는 차트 데이터 호환성 처리
+            stepInfo =
+              await appController.researchController.getStepDataWithMigration(
+                projectData.id,
+                i
+              );
+          } else {
+            stepInfo = await appController.researchController.getStepData(
               projectData.id,
               i
             );
+          }
+
           if (stepInfo) {
             allStepData[i] = stepInfo;
           }
@@ -137,6 +148,8 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 
     try {
       setIsSaving(true);
+      console.log(`Attempting to save step ${stepNumber}:`, content);
+
       await appController.researchController.saveStepData(
         project.id,
         stepNumber,
@@ -149,8 +162,12 @@ const ResearchView: React.FC<ResearchViewProps> = ({
       if (stepNumber > currentStep) {
         setCurrentStep(stepNumber);
       }
+
+      console.log(`Step ${stepNumber} saved successfully`);
+      toast.success(`${stepNumber}단계 데이터가 저장되었습니다.`);
     } catch (error) {
       console.error('Failed to save step:', error);
+      toast.error(`${stepNumber}단계 데이터 저장에 실패했습니다.`);
     } finally {
       setIsSaving(false);
     }

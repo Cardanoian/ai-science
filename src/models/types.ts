@@ -1,13 +1,3 @@
-export interface User {
-  id: string;
-  email?: string;
-  display_name?: string;
-  role: 'teacher' | 'student';
-  school?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Board {
   id: string;
   title: string;
@@ -75,25 +65,6 @@ export interface ResearchStep {
   updated_at: string;
 }
 
-export interface ExperimentData {
-  id: string;
-  project_id: string;
-  data_type: string;
-  title: string;
-  data: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface ResearchQA {
-  id: string;
-  project_id: string;
-  step_number: number;
-  question: string;
-  answer?: string;
-  ai_feedback?: string;
-  created_at: string;
-}
-
 export interface PresentationData {
   id: string;
   project_id: string;
@@ -103,39 +74,9 @@ export interface PresentationData {
   created_at: string;
 }
 
-// UI 상태 관련 타입
-export interface AppState {
-  currentView: 'welcome' | 'dashboard' | 'board' | 'research';
-  user: User | null;
-  currentBoard: Board | null;
-  isLoading: boolean;
-  error: string | null;
-}
-
 export interface DragData {
   isDragging: boolean;
   dragOffset: { x: number; y: number };
-}
-
-// 모달 상태 타입
-export interface ModalState {
-  login: boolean;
-  joinClass: boolean;
-  createClass: boolean;
-  classDetail: boolean;
-}
-
-// 폼 데이터 타입
-export interface LoginFormData {
-  email: string;
-  password: string;
-  displayName?: string;
-  school?: string;
-}
-
-export interface JoinClassFormData {
-  classCode: string;
-  studentName: string;
 }
 
 export interface CreateClassFormData {
@@ -210,7 +151,26 @@ export interface ChartDataPoint {
   category?: string;
 }
 
+export interface ChartSeries {
+  name: string;
+  color: string;
+}
+
 export interface ChartData {
+  id: string;
+  type: 'bar' | 'line' | 'pie';
+  title: string;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  series: ChartSeries[];
+  data: Array<{
+    name: string;
+    [seriesName: string]: number[] | string;
+  }>;
+}
+
+// 기존 데이터와의 호환성을 위한 레거시 타입
+export interface LegacyChartData {
   id: string;
   type: 'bar' | 'line' | 'pie';
   title: string;
@@ -236,46 +196,6 @@ export interface ResearchTopicRecommendation {
   concepts: string[];
 }
 
-// AI 관련 타입
-export interface AITopicRecommendation {
-  title: string;
-  description: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  materials: string[];
-  safetyNote: string;
-  estimatedTime: string;
-}
-
-export interface AIFeedback {
-  step: number;
-  content: string;
-  suggestions: string[];
-  encouragement: string;
-  nextSteps: string[];
-  timestamp: string;
-}
-
-// 에러 타입
-export interface AppError {
-  code: string;
-  message: string;
-  details?: unknown;
-  timestamp: string;
-}
-
-// 실시간 이벤트 타입
-export interface RealtimeEvent {
-  type:
-    | 'note_created'
-    | 'note_updated'
-    | 'note_deleted'
-    | 'user_joined'
-    | 'user_left';
-  payload: unknown;
-  timestamp: string;
-  userId?: string;
-}
-
 // 학급 통계 타입
 export interface ClassStatistics {
   totalStudents: number;
@@ -284,43 +204,4 @@ export interface ClassStatistics {
   researchProjects: number;
   completedProjects: number;
   averageProgress: number;
-}
-
-// 내보내기 데이터 타입
-export interface ExportData {
-  format: 'pdf' | 'docx' | 'json';
-  content: {
-    projectInfo: ResearchProject;
-    steps: ResearchStep[];
-    data: ExperimentData[];
-    presentations: PresentationData[];
-  };
-}
-
-// 설정 타입
-export interface AppSettings {
-  theme: 'light' | 'dark' | 'auto';
-  language: 'ko' | 'en';
-  autoSave: boolean;
-  notifications: boolean;
-  aiAssistance: boolean;
-}
-
-// 알림 타입
-export interface Notification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-}
-
-// 노트 내보내기 데이터 타입
-export interface NoteExportData {
-  content: string;
-  created: string;
-  position: number;
-  color: string;
 }
