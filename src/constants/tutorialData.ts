@@ -6,15 +6,15 @@ const plantChartData: ChartData = {
   title: '식물 성장 비교',
   xAxisLabel: '날짜',
   yAxisLabel: '키(cm)',
+  series: [
+    { name: '햇빛 그룹', color: '#8884d8' },
+    { name: '어둠 그룹', color: '#82ca9d' },
+  ],
   data: [
-    { name: '1일', value: 2, category: '햇빛 그룹' },
-    { name: '3일', value: 4, category: '햇빛 그룹' },
-    { name: '5일', value: 7, category: '햇빛 그룹' },
-    { name: '7일', value: 10, category: '햇빛 그룹' },
-    { name: '1일', value: 2, category: '어둠 그룹' },
-    { name: '3일', value: 2.5, category: '어둠 그룹' },
-    { name: '5일', value: 3, category: '어둠 그룹' },
-    { name: '7일', value: 3.2, category: '어둠 그룹' },
+    { name: '1일', '햇빛 그룹': [2], '어둠 그룹': [2] },
+    { name: '3일', '햇빛 그룹': [4], '어둠 그룹': [2.5] },
+    { name: '5일', '햇빛 그룹': [7], '어둠 그룹': [3] },
+    { name: '7일', '햇빛 그룹': [10], '어둠 그룹': [3.2] },
   ],
 };
 
@@ -24,13 +24,14 @@ const waterChartData: ChartData = {
   title: '물 가열 곡선',
   xAxisLabel: '시간(분)',
   yAxisLabel: '온도(°C)',
+  series: [{ name: '온도', color: '#ff7300' }],
   data: [
-    { name: '0분', value: -5 },
-    { name: '2분', value: 0 },
-    { name: '4분', value: 0 },
-    { name: '6분', value: 50 },
-    { name: '8분', value: 100 },
-    { name: '10분', value: 100 },
+    { name: '0분', 온도: [-5] },
+    { name: '2분', 온도: [0] },
+    { name: '4분', 온도: [0] },
+    { name: '6분', 온도: [50] },
+    { name: '8분', 온도: [100] },
+    { name: '10분', 온도: [100] },
   ],
 };
 
@@ -40,10 +41,11 @@ const acidBaseChartData: ChartData = {
   title: '용액별 색상 변화',
   xAxisLabel: '용액',
   yAxisLabel: '예상 pH',
+  series: [{ name: 'pH 값', color: '#8884d8' }],
   data: [
-    { name: '식초', value: 3 },
-    { name: '물', value: 7 },
-    { name: '비눗물', value: 9 },
+    { name: '식초', 'pH 값': [3] },
+    { name: '물', 'pH 값': [7] },
+    { name: '비눗물', 'pH 값': [9] },
   ],
 };
 
@@ -53,10 +55,11 @@ const soundChartData: ChartData = {
   title: '소리 크기 비교',
   xAxisLabel: '진동 세기',
   yAxisLabel: '소리 크기 (주관적)',
+  series: [{ name: '소리 크기', color: '#82ca9d' }],
   data: [
-    { name: '약하게 튕기기', value: 2 },
-    { name: '보통 세기', value: 5 },
-    { name: '세게 튕기기', value: 9 },
+    { name: '약하게 튕기기', '소리 크기': [2] },
+    { name: '보통 세기', '소리 크기': [5] },
+    { name: '세게 튕기기', '소리 크기': [9] },
   ],
 };
 

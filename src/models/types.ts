@@ -187,6 +187,15 @@ export interface ChartConfig {
   data: ChartDataPoint[];
 }
 
+export interface ExperimentData {
+  id: string;
+  project_id: string;
+  data_type: string;
+  title: string;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface ResearchTopicRecommendation {
   title: string;
   description: string;
