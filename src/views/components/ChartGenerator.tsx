@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   BarChart3,
   LineChart,
@@ -24,7 +24,7 @@ import {
   LabelList,
   Legend,
 } from 'recharts';
-import type { ChartData, ChartSeries } from '../../models/types';
+import type { ChartData } from '../../models/types';
 
 interface ChartGeneratorProps {
   onChartCreate: (chartData: ChartData) => void;
@@ -37,138 +37,236 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
 }) => {
   // 차트 색상 팔레트
   const colors = [
-    '#3b82f6',
-    '#ef4444',
-    '#10b981',
-    '#f59e0b',
-    '#8b5cf6',
-    '#06b6d4',
-    '#f97316',
-    '#84cc16',
+    '#3b82f6', // 파랑
+    '#ef4444', // 빨강
+    '#10b981', // 초록
+    '#f59e0b', // 주황
+    '#8b5cf6', // 보라
+    '#06b6d4', // 청록
+    '#f97316', // 진한 주황
+    '#84cc16', // 연두
+    '#6366f1', // 인디고
+    '#ec4899', // 분홍
+    '#a855f7', // 자주
+    '#22c55e', // 에메랄드
+    '#eab308', // 노랑
+    '#d946ef', // 마젠타
+    '#f43f5e', // 장미
+    '#14b8a6', // 민트
   ];
 
-  const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar');
-  const [title, setTitle] = useState('');
-  const [xAxisLabel, setXAxisLabel] = useState('');
-  const [yAxisLabel, setYAxisLabel] = useState('');
-  const [series, setSeries] = useState<ChartSeries[]>([
+  // 내부 상태 대신 existingData를 기반으로 작동
+  const currentChartType = existingData?.type || 'bar';
+  const currentTitle = existingData?.title || '';
+  const currentXAxisLabel = existingData?.xAxisLabel || '';
+  const currentYAxisLabel = existingData?.yAxisLabel || '';
+  const currentSeries = existingData?.series || [
     { name: '자료 1', color: colors[0] },
-  ]);
-  const [dataPoints, setDataPoints] = useState<
-    Array<{ name: string; values: { [seriesName: string]: string } }>
-  >([
-    { name: '', values: {} },
-    { name: '', values: {} },
-  ]);
-  const [showPreview, setShowPreview] = useState(false);
-
-  // 기존 데이터가 있으면 로드
-  useEffect(() => {
-    if (existingData) {
-      setChartType(existingData.type);
-      setTitle(existingData.title);
-      setXAxisLabel(existingData.xAxisLabel || '');
-      setYAxisLabel(existingData.yAxisLabel || '');
-
-      if (existingData.series) {
-        setSeries(existingData.series);
-        setDataPoints(
-          existingData.data.map((item) => {
-            const values: { [key: string]: string } = {};
-            existingData.series.forEach((s) => {
-              const value = item[s.name];
-              if (Array.isArray(value)) {
-                values[s.name] = value[0]?.toString() || '';
-              } else {
-                values[s.name] = value?.toString() || '';
-              }
-            });
-            return {
-              name: item.name,
-              values,
-            };
-          })
-        );
+  ];
+  const currentDataPoints = existingData?.data.map((item) => {
+    const values: { [key: string]: string } = {};
+    currentSeries.forEach((s) => {
+      const valueName = item[s.name];
+      if (Array.isArray(valueName)) {
+        values[s.name] = valueName[0]?.toString() || '';
       } else {
-        // 기존 단일 시리즈 데이터 호환성
-        setDataPoints(
-          existingData.data.map((item) => ({
-            name: item.name,
-            values: {
-              '자료 1': (item as { value?: number }).value?.toString() || '',
-            },
-          }))
-        );
+        values[s.name] = valueName?.toString() || '';
       }
-      setShowPreview(true);
-    }
-  }, [existingData]);
+    });
+    return {
+      name: item.name,
+      values,
+    };
+  }) || [{ name: '', values: {} }];
+
+  const showPreview = !!existingData; // existingData가 있으면 미리보기 표시
+
+  // 차트 데이터 업데이트 함수 (모든 변경 사항을 onChartCreate로 전달)
+  const updateChartData = (updates: Partial<ChartData>) => {
+    const newChartData: ChartData = {
+      id: existingData?.id || crypto.randomUUID(),
+      type: updates.type || currentChartType,
+      title: updates.title ?? currentTitle,
+      xAxisLabel: updates.xAxisLabel ?? currentXAxisLabel,
+      yAxisLabel: updates.yAxisLabel ?? currentYAxisLabel,
+      series: updates.series || currentSeries,
+      data: updates.data || existingData?.data || [],
+    };
+    onChartCreate(newChartData);
+  };
+
+  // 차트 타입 변경
+  const handleChartTypeChange = (type: 'bar' | 'line' | 'pie') => {
+    updateChartData({ type });
+  };
+
+  // 제목 변경
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateChartData({ title: e.target.value });
+  };
+
+  // X축 라벨 변경
+  const handleXAxisLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateChartData({ xAxisLabel: e.target.value });
+  };
+
+  // Y축 라벨 변경
+  const handleYAxisLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateChartData({ yAxisLabel: e.target.value });
+  };
 
   // 범례 추가
   const addSeries = () => {
-    const newSeries = {
-      name: `자료 ${series.length + 1}`,
-      color: colors[series.length % colors.length],
+    if (currentSeries.length === colors.length) {
+      return currentSeries;
+    }
+    const newSeriesItem = {
+      name: `자료 ${currentSeries.length + 1}`,
+      color: colors[currentSeries.length % colors.length],
     };
-    setSeries((prev) => [...prev, newSeries]);
+    const updatedSeries = [...currentSeries, newSeriesItem];
 
     // 기존 데이터 포인트에 새 시리즈 값 추가
-    setDataPoints((prev) =>
-      prev.map((point) => ({
-        ...point,
-        values: { ...point.values, [newSeries.name]: '' },
-      }))
+    const updatedData = currentDataPoints.map((point) => {
+      const newValues = { ...point.values, [newSeriesItem.name]: '' };
+      return { ...point, values: newValues };
+    });
+
+    // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+    const externalData = updatedData.map(
+      (dataPoint: { name: string; values: { [key: string]: string } }) => {
+        const newDataPoint: {
+          name: string;
+          [seriesName: string]: string | number[];
+        } = {
+          name: dataPoint.name,
+        };
+        for (const key in dataPoint.values) {
+          newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
+        }
+        return newDataPoint;
+      }
     );
+
+    updateChartData({ series: updatedSeries, data: externalData });
   };
 
   // 범례 삭제
   const removeSeries = (seriesName: string) => {
-    if (series.length > 1) {
-      setSeries((prev) => prev.filter((s) => s.name !== seriesName));
+    if (currentSeries.length > 1) {
+      const updatedSeries = currentSeries.filter((s) => s.name !== seriesName);
 
       // 데이터 포인트에서 해당 시리즈 값 제거
-      setDataPoints((prev) =>
-        prev.map((point) => {
-          const newValues = { ...point.values };
-          delete newValues[seriesName];
-          return { ...point, values: newValues };
-        })
+      const updatedData = currentDataPoints.map((point) => {
+        const newValues = { ...point.values };
+        delete newValues[seriesName];
+        return { ...point, values: newValues };
+      });
+
+      // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+      const externalData = updatedData.map(
+        (dataPoint: { name: string; values: { [key: string]: string } }) => {
+          const newDataPoint: {
+            name: string;
+            [seriesName: string]: string | number[];
+          } = {
+            name: dataPoint.name,
+          };
+          for (const key in dataPoint.values) {
+            newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
+          }
+          return newDataPoint;
+        }
       );
+
+      updateChartData({ series: updatedSeries, data: externalData });
     }
   };
 
   // 범례 이름 변경
   const updateSeriesName = (oldName: string, newName: string) => {
-    setSeries((prev) =>
-      prev.map((s) => (s.name === oldName ? { ...s, name: newName } : s))
+    const updatedSeries = currentSeries.map((s) =>
+      s.name === oldName ? { ...s, name: newName } : s
     );
 
     // 데이터 포인트에서 키 이름 변경
-    setDataPoints((prev) =>
-      prev.map((point) => {
-        const newValues = { ...point.values };
-        if (newValues[oldName] !== undefined) {
-          newValues[newName] = newValues[oldName];
-          delete newValues[oldName];
+    const updatedData = currentDataPoints.map((point) => {
+      const newValues = { ...point.values };
+      if (newValues[oldName] !== undefined) {
+        newValues[newName] = newValues[oldName];
+        delete newValues[oldName];
+      }
+      return { ...point, values: newValues };
+    });
+
+    // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+    const externalData = updatedData.map(
+      (dataPoint: { name: string; values: { [key: string]: string } }) => {
+        const newDataPoint: {
+          name: string;
+          [seriesName: string]: string | number[];
+        } = {
+          name: dataPoint.name,
+        };
+        for (const key in dataPoint.values) {
+          newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
         }
-        return { ...point, values: newValues };
-      })
+        return newDataPoint;
+      }
     );
+
+    updateChartData({ series: updatedSeries, data: externalData });
   };
 
   // 데이터 포인트 추가
   const addDataPoint = () => {
     const newValues: { [key: string]: string } = {};
-    series.forEach((s) => {
+    currentSeries.forEach((s) => {
       newValues[s.name] = '';
     });
-    setDataPoints((prev) => [...prev, { name: '', values: newValues }]);
+    const updatedData = [...currentDataPoints, { name: '', values: newValues }];
+
+    // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+    const externalData = updatedData.map(
+      (dataPoint: { name: string; values: { [key: string]: string } }) => {
+        const newDataPoint: {
+          name: string;
+          [seriesName: string]: string | number[];
+        } = {
+          name: dataPoint.name,
+        };
+        for (const key in dataPoint.values) {
+          newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
+        }
+        return newDataPoint;
+      }
+    );
+
+    updateChartData({ data: externalData });
   };
 
   // 데이터 포인트 삭제
   const removeDataPoint = (index: number) => {
-    if (dataPoints.length > 2) {
-      setDataPoints((prev) => prev.filter((_, i) => i !== index));
+    if (currentDataPoints.length > 2) {
+      const updatedData = currentDataPoints.filter((_, i) => i !== index);
+
+      // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+      const externalData = updatedData.map(
+        (dataPoint: { name: string; values: { [key: string]: string } }) => {
+          const newDataPoint: {
+            name: string;
+            [seriesName: string]: string | number[];
+          } = {
+            name: dataPoint.name,
+          };
+          for (const key in dataPoint.values) {
+            newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
+          }
+          return newDataPoint;
+        }
+      );
+
+      updateChartData({ data: externalData });
     }
   };
 
@@ -178,29 +276,45 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
     field: 'name' | string,
     value: string
   ) => {
-    setDataPoints((prev) =>
-      prev.map((item, i) => {
-        if (i === index) {
-          if (field === 'name') {
-            return { ...item, name: value };
-          } else {
-            return {
-              ...item,
-              values: { ...item.values, [field]: value },
-            };
-          }
+    const updatedData = currentDataPoints.map((item, i) => {
+      if (i === index) {
+        if (field === 'name') {
+          return { ...item, name: value };
+        } else {
+          return {
+            ...item,
+            values: { ...item.values, [field]: value },
+          };
         }
-        return item;
-      })
+      }
+      return item;
+    });
+
+    // 외부로 전달할 데이터 형식으로 변환 (string -> number[])
+    const externalData = updatedData.map(
+      (dataPoint: { name: string; values: { [key: string]: string } }) => {
+        const newDataPoint: {
+          name: string;
+          [seriesName: string]: string | number[];
+        } = {
+          name: dataPoint.name,
+        };
+        for (const key in dataPoint.values) {
+          newDataPoint[key] = [parseFloat(dataPoint.values[key] || '0') || 0];
+        }
+        return newDataPoint;
+      }
     );
+
+    updateChartData({ data: externalData });
   };
 
-  // 차트 데이터 변환
+  // 차트 데이터 변환 (렌더링용)
   const getChartData = () => {
-    if (chartType === 'pie') {
+    if (currentChartType === 'pie') {
       // 파이 차트는 첫 번째 시리즈만 사용
-      const firstSeries = series[0];
-      return dataPoints
+      const firstSeries = currentSeries[0];
+      return currentDataPoints
         .filter((item) => item.name && item.values[firstSeries?.name])
         .map((item) => ({
           name: item.name,
@@ -208,15 +322,15 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
         }));
     } else {
       // 라인/바 차트는 모든 시리즈 사용
-      return dataPoints
+      return currentDataPoints
         .filter((item) => {
-          return item.name && series.some((s) => item.values[s.name]);
+          return item.name && currentSeries.some((s) => item.values[s.name]);
         })
         .map((item) => {
           const dataPoint: { name: string; [key: string]: number | string } = {
             name: item.name,
           };
-          series.forEach((s) => {
+          currentSeries.forEach((s) => {
             dataPoint[s.name] = parseFloat(item.values[s.name] || '0') || 0;
           });
           return dataPoint;
@@ -224,11 +338,11 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
     }
   };
 
-  // 차트 생성
+  // 차트 생성 (실제로는 onChartCreate를 통해 부모 상태 업데이트)
   const handleCreateChart = () => {
     const internalChartData = getChartData();
 
-    if (!title.trim()) {
+    if (!currentTitle.trim()) {
       alert('차트 제목을 입력해주세요.');
       return;
     }
@@ -241,10 +355,13 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
     // 외부로 전달할 데이터 형식으로 변환 (number -> number[])
     const externalChartData = internalChartData.map(
       (dataPoint: { name: string; [key: string]: string | number }) => {
-        const newDataPoint: { [key: string]: string | number[] } = {};
+        const newDataPoint: { name: string; [key: string]: string | number[] } =
+          {
+            name: dataPoint.name, // name 속성을 명시적으로 초기화
+          };
         for (const key in dataPoint) {
           if (key === 'name') {
-            newDataPoint[key] = dataPoint[key] as string;
+            continue; // 이미 위에서 할당했으므로 건너뜁니다.
           } else if (typeof dataPoint[key] === 'number') {
             newDataPoint[key] = [dataPoint[key] as number];
           } else {
@@ -256,12 +373,12 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
     );
 
     const newChart: ChartData = {
-      id: crypto.randomUUID(),
-      type: chartType,
-      title: title.trim(),
-      xAxisLabel: xAxisLabel.trim() || undefined,
-      yAxisLabel: yAxisLabel.trim() || undefined,
-      series: series,
+      id: existingData?.id || crypto.randomUUID(),
+      type: currentChartType,
+      title: currentTitle.trim() ?? '',
+      xAxisLabel: currentXAxisLabel.trim() ?? undefined,
+      yAxisLabel: currentYAxisLabel.trim() ?? undefined,
+      series: currentSeries,
       data: externalChartData as Array<{
         name: string;
         [seriesName: string]: string | number[];
@@ -269,20 +386,11 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
     };
 
     onChartCreate(newChart);
-    setShowPreview(true);
   };
 
   // 차트 초기화
   const handleReset = () => {
-    setTitle('');
-    setXAxisLabel('');
-    setYAxisLabel('');
-    setSeries([{ name: '시리즈 1', color: colors[0] }]);
-    setDataPoints([
-      { name: '', values: {} },
-      { name: '', values: {} },
-    ]);
-    setShowPreview(false);
+    onChartCreate(undefined as unknown as ChartData); // 부모 컴포넌트의 chartData를 초기화
   };
 
   // 차트 렌더링
@@ -296,7 +404,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
       data,
     };
 
-    switch (chartType) {
+    switch (currentChartType) {
       case 'bar':
         return (
           <ResponsiveContainer {...commonProps}>
@@ -311,18 +419,36 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 textAnchor='end'
                 height={80}
                 interval={0}
+                label={
+                  currentXAxisLabel.trim()
+                    ? {
+                        value: currentXAxisLabel,
+                        position: 'insideBottom',
+                        offset: -10,
+                      }
+                    : undefined
+                }
               />
               <YAxis
                 domain={[
                   Math.floor((statistics?.minimum || 0) * 0.9),
                   Math.ceil((statistics?.maximum || 0) * 1.1),
                 ]}
+                label={
+                  currentYAxisLabel.trim()
+                    ? {
+                        value: currentYAxisLabel,
+                        angle: -90,
+                        position: 'insideLeft',
+                      }
+                    : undefined
+                }
               />
               <Tooltip />
-              {series.length > 1 && <Legend />}
-              {series.map((s) => (
+              {currentSeries.length > 1 && <Legend />}
+              {currentSeries.map((s) => (
                 <Bar key={s.name} dataKey={s.name} fill={s.color} name={s.name}>
-                  {series.length === 1 && (
+                  {currentSeries.length === 1 && (
                     <LabelList
                       dataKey={s.name}
                       position='top'
@@ -353,16 +479,34 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 textAnchor='end'
                 height={80}
                 interval={0}
+                label={
+                  currentXAxisLabel.trim()
+                    ? {
+                        value: currentXAxisLabel,
+                        position: 'insideBottom',
+                        offset: -10,
+                      }
+                    : undefined
+                }
               />
               <YAxis
                 domain={[
                   Math.floor((statistics?.minimum || 0) * 0.9),
                   Math.ceil((statistics?.maximum || 0) * 1.1),
                 ]}
+                label={
+                  currentYAxisLabel.trim()
+                    ? {
+                        value: currentYAxisLabel,
+                        angle: -90,
+                        position: 'insideLeft',
+                      }
+                    : undefined
+                }
               />
               <Tooltip />
-              {series.length > 1 && <Legend />}
-              {series.map((s) => (
+              {currentSeries.length > 1 && <Legend />}
+              {currentSeries.map((s) => (
                 <Line
                   key={s.name}
                   type='monotone'
@@ -372,7 +516,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                   dot={{ fill: s.color, strokeWidth: 2, r: 6 }}
                   name={s.name}
                 >
-                  {series.length === 1 && (
+                  {currentSeries.length === 1 && (
                     <LabelList
                       dataKey={s.name}
                       position='top'
@@ -429,12 +573,12 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
 
     let allValues: number[] = [];
 
-    if (chartType === 'pie') {
+    if (currentChartType === 'pie') {
       const pieData = data as Array<{ value: number }>;
       allValues = pieData.map((item) => item.value);
     } else {
       const multiSeriesData = data as Array<{ [key: string]: number | string }>;
-      series.forEach((s) => {
+      currentSeries.forEach((s) => {
         const seriesValues = multiSeriesData.map(
           (item) => (item[s.name] as number) || 0
         );
@@ -491,9 +635,9 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           ].map(({ type, icon: Icon, name, desc }) => (
             <button
               key={type}
-              onClick={() => setChartType(type)}
+              onClick={() => handleChartTypeChange(type)}
               className={`p-4 border-2 rounded-lg transition-all text-center ${
-                chartType === type
+                currentChartType === type
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-200 hover:border-gray-300 text-gray-700'
               }`}
@@ -514,14 +658,14 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           </label>
           <input
             type='text'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={currentTitle}
+            onChange={(e) => handleTitleChange(e)}
             className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
             placeholder='예: 식물 성장 실험 결과'
           />
         </div>
 
-        {chartType !== 'pie' && (
+        {currentChartType !== 'pie' && (
           <>
             <div>
               <label className='block font-medium text-gray-700 mb-2'>
@@ -529,8 +673,8 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
               </label>
               <input
                 type='text'
-                value={xAxisLabel}
-                onChange={(e) => setXAxisLabel(e.target.value)}
+                value={currentXAxisLabel}
+                onChange={(e) => handleXAxisLabelChange(e)}
                 className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 placeholder='예: 날짜'
               />
@@ -542,8 +686,8 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
               </label>
               <input
                 type='text'
-                value={yAxisLabel}
-                onChange={(e) => setYAxisLabel(e.target.value)}
+                value={currentYAxisLabel}
+                onChange={(e) => handleYAxisLabelChange(e)}
                 className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 placeholder='예: 높이(cm)'
               />
@@ -553,13 +697,13 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
       </div>
 
       {/* 범례 관리 (파이 차트가 아닌 경우) */}
-      {chartType !== 'pie' && (
+      {currentChartType !== 'pie' && (
         <div>
           <label className='block font-semibold text-gray-800 mb-3'>
             범례 관리:
           </label>
           <div className='space-y-3'>
-            {series.map((s, index) => (
+            {currentSeries.map((s, index) => (
               <div key={index} className='flex items-center gap-3'>
                 <div
                   className='w-6 h-6 rounded border-2 border-gray-300'
@@ -572,7 +716,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                   className='flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   placeholder={`범례 ${index + 1} (예: 고추)`}
                 />
-                {series.length > 1 && (
+                {currentSeries.length > 1 && (
                   <button
                     onClick={() => removeSeries(s.name)}
                     className='p-2 text-red-500 hover:text-red-700 transition-colors'
@@ -606,20 +750,22 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
             className='grid gap-2'
             style={{
               gridTemplateColumns:
-                chartType === 'pie'
+                currentChartType === 'pie'
                   ? '1fr 1fr auto'
-                  : `1fr repeat(${series.length}, 1fr) auto`,
+                  : `1fr repeat(${currentSeries.length}, 1fr) auto`,
             }}
           >
             <div className='font-medium text-sm text-gray-600 p-2'>
-              {chartType === 'pie' ? '항목' : xAxisLabel || '가로축'}
+              {currentChartType === 'pie'
+                ? '항목'
+                : currentXAxisLabel || '가로축'}
             </div>
-            {chartType === 'pie' ? (
+            {currentChartType === 'pie' ? (
               <div className='font-medium text-sm text-gray-600 p-2'>
-                {yAxisLabel || '값'}
+                {currentYAxisLabel || '값'}
               </div>
             ) : (
-              series.map((s) => (
+              currentSeries.map((s) => (
                 <div
                   key={s.name}
                   className='font-medium text-sm text-gray-600 p-2 text-center'
@@ -638,15 +784,15 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
           </div>
 
           {/* 데이터 행 */}
-          {dataPoints.map((point, index) => (
+          {currentDataPoints.map((point, index) => (
             <div
               key={index}
               className='grid gap-2'
               style={{
                 gridTemplateColumns:
-                  chartType === 'pie'
+                  currentChartType === 'pie'
                     ? '1fr 1fr auto'
-                    : `1fr repeat(${series.length}, 1fr) auto`,
+                    : `1fr repeat(${currentSeries.length}, 1fr) auto`,
               }}
             >
               <input
@@ -657,19 +803,23 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 placeholder={`항목 ${index + 1}`}
               />
 
-              {chartType === 'pie' ? (
+              {currentChartType === 'pie' ? (
                 <input
                   type='number'
-                  value={point.values[series[0]?.name] || ''}
+                  value={point.values[currentSeries[0]?.name] || ''}
                   onChange={(e) =>
-                    updateDataPoint(index, series[0]?.name, e.target.value)
+                    updateDataPoint(
+                      index,
+                      currentSeries[0]?.name,
+                      e.target.value
+                    )
                   }
                   className='p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   placeholder='숫자값'
                   step='0.1'
                 />
               ) : (
-                series.map((s) => (
+                currentSeries.map((s) => (
                   <input
                     key={s.name}
                     type='number'
@@ -684,7 +834,7 @@ const ChartGenerator: React.FC<ChartGeneratorProps> = ({
                 ))
               )}
 
-              {dataPoints.length > 2 && (
+              {currentDataPoints.length > 2 && (
                 <button
                   onClick={() => removeDataPoint(index)}
                   className='p-2 text-red-500 hover:text-red-700 transition-colors flex-shrink-0'

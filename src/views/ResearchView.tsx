@@ -148,7 +148,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
 
     try {
       setIsSaving(true);
-      console.log(`Attempting to save step ${stepNumber}:`, content);
+      // console.log(`Attempting to save step ${stepNumber}:`, content);
 
       await appController.researchController.saveStepData(
         project.id,
@@ -163,7 +163,7 @@ const ResearchView: React.FC<ResearchViewProps> = ({
         setCurrentStep(stepNumber);
       }
 
-      console.log(`Step ${stepNumber} saved successfully`);
+      // console.log(`Step ${stepNumber} saved successfully`);
       toast.success(`${stepNumber}단계 데이터가 저장되었습니다.`);
     } catch (error) {
       console.error('Failed to save step:', error);

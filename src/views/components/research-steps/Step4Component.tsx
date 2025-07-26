@@ -67,7 +67,7 @@ const Step4Component: React.FC<Step4ComponentProps> = ({
         </label>
         <ChartGenerator
           onChartCreate={(chartData) => {
-            console.log('Chart created in Step4Component:', chartData);
+            // console.log('Chart created in Step4Component:', chartData);
             onDataChange('chartData', chartData);
             // 차트 생성 후 자동 저장 (선택사항)
             // onSave && onSave({ ...localData, chartData });

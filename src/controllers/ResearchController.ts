@@ -138,7 +138,7 @@ export class ResearchController {
     try {
       // 4단계 차트 데이터 검증 및 정리
       if (stepNumber === 4 && content.chartData) {
-        console.log('Saving chart data:', content.chartData);
+        // console.log('Saving chart data:', content.chartData);
 
         // 차트 데이터가 새로운 구조인지 확인
         const chartData = content.chartData as ChartData;
@@ -171,7 +171,7 @@ export class ResearchController {
 
       const timestamp = new Date().toISOString();
 
-      console.log(`Saving step ${stepNumber} data:`, content);
+      // console.log(`Saving step ${stepNumber} data:`, content);
 
       // all_steps 필드 업데이트
       const { error: updateProjectError } = await supabase
@@ -208,7 +208,7 @@ export class ResearchController {
         await supabase.from('notes').update(noteUpdates).eq('id', proj.note_id);
       }
 
-      console.log(`Step ${stepNumber} data saved successfully`);
+      // console.log(`Step ${stepNumber} data saved successfully`);
       return content;
     } catch (error) {
       console.error('Error saving step data:', error);
