@@ -83,7 +83,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
-  const [loginMode, setLoginMode] = useState<'login' | 'signup'>('login');
 
   // URL에서 join 파라미터 확인
   useEffect(() => {
@@ -138,10 +137,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 수업 참여
               </button>
               <button
-                onClick={() => {
-                  setLoginMode('login');
-                  setShowLoginModal(true);
-                }}
+                onClick={() => setShowLoginModal(true)}
                 className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
               >
                 로그인
@@ -175,10 +171,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
           <div className='flex flex-col sm:flex-row gap-4 justify-center items-center'>
             <button
-              onClick={() => {
-                setLoginMode('signup');
-                setShowLoginModal(true);
-              }}
+              onClick={() => setShowLoginModal(true)}
               className='px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-lg font-semibold w-60 hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2'
             >
               <GraduationCap className='w-5 h-5' />
@@ -341,10 +334,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </p>
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <button
-              onClick={() => {
-                setLoginMode('signup');
-                setShowLoginModal(true);
-              }}
+              onClick={() => setShowLoginModal(true)}
               className='px-8 py-4 bg-white text-blue-600 rounded-xl text-lg font-semibold hover:bg-gray-50 transition-colors'
             >
               교사 계정 만들기
@@ -384,10 +374,8 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
       {/* 모달들 */}
       {showLoginModal && (
         <LoginModal
-          mode={loginMode}
           onClose={() => setShowLoginModal(false)}
           onSuccess={handleLoginSuccess}
-          onModeChange={setLoginMode}
           authController={appController.authController}
         />
       )}
