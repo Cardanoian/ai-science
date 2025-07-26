@@ -110,36 +110,27 @@ export class AuthController {
     return this.currentState;
   }
 
-  // 회원가입
-  async signUp(
-    email: string,
-    password: string,
-    displayName: string,
-    role: 'teacher' | 'student' = 'teacher',
-    school?: string
-  ) {
+  // Google OAuth 로그인 (교사 전용)
+  async signInWithGoogle() {
     try {
       this.updateState({ isLoading: true });
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
       });
 
       if (error) throw error;
 
-      if (data.user) {
-        await this.createUserProfile(data.user.id, displayName, role, school);
-        toast.success('회원가입이 완료되었습니다!');
-      }
-
       return { data, error: null };
     } catch (error: unknown) {
-      console.error('Sign up error:', error);
+      console.error('Google sign in error:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
-          : '회원가입 중 오류가 발생했습니다.';
+          : 'Google 로그인 중 오류가 발생했습니다.';
       toast.error(errorMessage);
       return { data: null, error };
     } finally {
@@ -147,24 +138,77 @@ export class AuthController {
     }
   }
 
-  // 로그인
-  async signIn(email: string, password: string) {
+  // 프로필 완성 여부 확인
+  async isProfileComplete(userId: string): Promise<boolean> {
+    try {
+      const profile = await this.getUserProfile(userId);
+      return !!(profile && profile.display_name);
+    } catch (error) {
+      console.error('Error checking profile completion:', error);
+      return false;
+    }
+  }
+
+  // Google 로그인 후 교사 프로필 완성
+  async completeTeacherProfile(
+    userId: string,
+    displayName: string,
+    school?: string
+  ) {
     try {
       this.updateState({ isLoading: true });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 기존 프로필이 있는지 확인
+      const existingProfile = await this.getUserProfile(userId);
+
+      let profileData;
+      if (existingProfile) {
+        // 기존 프로필 업데이트
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update({
+            display_name: displayName,
+            school,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        profileData = data;
+      } else {
+        // 새 프로필 생성
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .insert([
+            {
+              id: userId,
+              display_name: displayName,
+              role: 'teacher',
+              school,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+        profileData = data;
+      }
+
+      // 현재 상태 업데이트
+      this.updateState({
+        profile: profileData,
       });
 
-      if (error) throw error;
-
-      toast.success('로그인되었습니다!');
-      return { data, error: null };
+      toast.success('프로필이 완성되었습니다!');
+      return { data: profileData, error: null };
     } catch (error: unknown) {
-      console.error('Sign in error:', error);
+      console.error('Error completing teacher profile:', error);
       const errorMessage =
-        error instanceof Error ? error.message : '로그인에 실패했습니다.';
+        error instanceof Error
+          ? error.message
+          : '프로필 완성 중 오류가 발생했습니다.';
       toast.error(errorMessage);
       return { data: null, error };
     } finally {
@@ -217,35 +261,6 @@ export class AuthController {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return null;
-    }
-  }
-
-  // 사용자 프로필 생성
-  async createUserProfile(
-    userId: string,
-    displayName: string,
-    role: 'teacher' | 'student',
-    school?: string
-  ): Promise<UserProfile> {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            id: userId,
-            display_name: displayName,
-            role,
-            school,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating user profile:', error);
-      throw error;
     }
   }
 

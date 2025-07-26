@@ -18,6 +18,7 @@ import type { AuthState } from '../controllers/AuthController';
 import type { Board } from '../models/types';
 import type { ClassController } from '../controllers/ClassController';
 import CreateClassModal from './components/CreateClassModal';
+import ProfileEditModal from './components/ProfileEditModal';
 
 interface DashboardViewProps {
   appController: AppController;
@@ -35,6 +36,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [classes, setClasses] = useState<Board[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showProfileEditModal, setShowProfileEditModal] = useState(false); // 프로필 편집 모달 상태 추가
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   // const [stats, setStats] = useState({
@@ -150,12 +152,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className='flex items-center space-x-4'>
-              <div className='flex items-center space-x-2 text-gray-700'>
+              <button
+                onClick={() => setShowProfileEditModal(true)} // 닉네임 클릭 시 모달 열기
+                className='flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors cursor-pointer'
+              >
                 <Users className='w-4 h-4' />
                 <span className='font-medium'>
                   {authState.profile?.display_name} 선생님
                 </span>
-              </div>
+              </button>
               <button
                 onClick={handleLogout}
                 className='p-2 text-gray-600 hover:text-gray-800 transition-colors'
@@ -302,6 +307,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           onSuccess={handleCreateSuccess}
           classController={appController.classController}
           teacherId={authState.profile?.id || ''}
+        />
+      )}
+
+      {/* 프로필 편집 모달 */}
+      {showProfileEditModal && authState.profile && (
+        <ProfileEditModal
+          onClose={() => setShowProfileEditModal(false)}
+          onSuccess={(updatedProfile) => {
+            // AuthController에서 이미 상태를 업데이트하므로 여기서는 추가 작업 불필요
+            console.log('프로필 업데이트 성공:', updatedProfile);
+          }}
+          authController={appController.authController}
+          currentProfile={authState.profile}
         />
       )}
     </div>
