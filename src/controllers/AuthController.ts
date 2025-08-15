@@ -37,6 +37,21 @@ export class AuthController {
   // 인증 상태 초기화
   private async initializeAuth() {
     try {
+      // OAuth 콜백 후 URL 파라미터 정리
+      const urlParams = new URLSearchParams(window.location.search);
+      if (
+        urlParams.has('access_token') ||
+        urlParams.has('code') ||
+        urlParams.has('refresh_token')
+      ) {
+        // URL에서 OAuth 관련 파라미터 제거
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -118,7 +133,7 @@ export class AuthController {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}`,
+          redirectTo: window.location.origin,
         },
       });
 
