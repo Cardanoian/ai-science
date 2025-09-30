@@ -250,7 +250,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               <div className='aspect-video relative'>
                 <iframe
                   ref={videoRef}
-                  src='https://www.youtube.com/embed/KnqmfsL1KUQ?si=Mi6Nc7rxPXesxFlc&enablejsapi=1&autoplay=1&mute=1&rel=0&modestbranding=1&vq=hd1080&loop=0&controls=1&playsinline=1'
+                  src='https://www.youtube.com/embed/KnqmfsL1KUQ?si=Mi6Nc7rxPXesxFlc&enablejsapi=1&autoplay=1&mute=1&rel=0&modestbranding=1&vq=hd1080&loop=1&playlist=KnqmfsL1KUQ&controls=1&playsinline=1'
                   title='과학 탐구 여행 소개 영상'
                   className='absolute inset-0 w-full h-full'
                   frameBorder='0'
@@ -270,14 +270,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 >
                   {isVideoVisible ? '재생 중' : '대기 중'}
                 </div>
-              </div>
-            </div>
-
-            {/* 영상 설명 */}
-            <div className='mt-8 text-center'>
-              <div className='inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium'>
-                <Sparkles className='w-4 h-4' />
-                <span>스크롤하면 자동으로 재생됩니다</span>
               </div>
             </div>
           </div>
