@@ -1,13 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BookOpen,
   Lightbulb,
-  FlaskConical,
   BarChart3,
-  Presentation,
-  Heart,
-  Search,
-  ArrowRight,
   Users,
   GraduationCap,
   Sparkles,
@@ -18,6 +13,7 @@ import type { Board } from '../models/types';
 import LoginModal from './components/LoginModal';
 import JoinClassModal from './components/JoinClassModal';
 import { SCIENCE_TOPICS } from '../constants/topics';
+import RESEARCH_STEPS from '../constants/researchSteps';
 
 interface WelcomeViewProps {
   appController: AppController;
@@ -28,54 +24,6 @@ interface WelcomeViewProps {
     toTutorial: (topic: (typeof SCIENCE_TOPICS)[0]) => void;
   };
 }
-
-// 탐구 단계 정의
-const RESEARCH_STEPS = [
-  {
-    id: 1,
-    title: '탐구 주제 찾기',
-    description: '관심 있는 현상을 관찰하고 탐구할 주제를 선정합니다.',
-    icon: Search,
-    color: 'bg-blue-500',
-  },
-  {
-    id: 2,
-    title: '탐구 질문과 가설',
-    description:
-      '관찰한 현상에 대한 질문을 만들고 예상 답안을 가설로 세웁니다.',
-    icon: Lightbulb,
-    color: 'bg-yellow-500',
-  },
-  {
-    id: 3,
-    title: '실험 계획하기',
-    description: '가설을 검증하기 위한 실험을 구체적으로 계획합니다.',
-    icon: FlaskConical,
-    color: 'bg-green-500',
-  },
-  {
-    id: 4,
-    title: '결과 정리 및 결론',
-    description: '실험 결과를 정리하고 분석하여 결론을 도출합니다.',
-    icon: BarChart3,
-    color: 'bg-purple-500',
-  },
-  {
-    id: 5,
-    title: '탐구 발표 준비',
-    description: '탐구 과정과 결과를 다른 사람들에게 발표할 자료를 준비합니다.',
-    icon: Presentation,
-    color: 'bg-orange-500',
-  },
-  {
-    id: 6,
-    title: '성찰하기',
-    description: '탐구 과정을 돌아보고 배운 점과 개선점을 정리합니다.',
-    icon: Heart,
-    color: 'bg-pink-500',
-  },
-];
-
 const WelcomeView: React.FC<WelcomeViewProps> = ({
   appController,
   authState,
@@ -83,6 +31,9 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+  const videoRef = useRef<HTMLIFrameElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   // URL에서 join 파라미터 확인
   useEffect(() => {
@@ -100,6 +51,58 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
       onNavigate.toDashboard();
     }
   }, [authState.isAuthenticated, authState.profile, onNavigate]);
+
+  // Intersection Observer를 사용한 영상 자동재생/정지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVideoVisible(true);
+            // 영상 재생 - 약간의 지연을 두어 iframe이 완전히 로드된 후 실행
+            setTimeout(() => {
+              if (videoRef.current) {
+                videoRef.current.contentWindow?.postMessage(
+                  JSON.stringify({
+                    event: 'command',
+                    func: 'playVideo',
+                    args: '',
+                  }),
+                  'https://www.youtube.com'
+                );
+              }
+            }, 500);
+          } else {
+            setIsVideoVisible(false);
+            // 영상 정지
+            if (videoRef.current) {
+              videoRef.current.contentWindow?.postMessage(
+                JSON.stringify({
+                  event: 'command',
+                  func: 'pauseVideo',
+                  args: '',
+                }),
+                'https://www.youtube.com'
+              );
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.3, // 30% 이상 보일 때 트리거 (더 민감하게)
+      }
+    );
+
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+
+    return () => {
+      if (videoContainerRef.current) {
+        observer.unobserve(videoContainerRef.current);
+      }
+    };
+  }, []);
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false);
@@ -172,16 +175,15 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           <div className='flex flex-col sm:flex-row gap-4 justify-center items-center'>
             <button
               onClick={() => setShowLoginModal(true)}
-              className='px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-lg font-semibold w-60 hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2'
+              className='px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-lg font-semibold w-60 hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2'
             >
               <GraduationCap className='w-5 h-5' />
               <span>교사로 시작하기</span>
-              <ArrowRight className='w-5 h-5' />
             </button>
 
             <button
               onClick={() => setShowJoinClassModal(true)}
-              className='px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl text-lg font-semibold w-60 hover:border-blue-500 hover:text-blue-600 transition-all flex items-center space-x-2'
+              className='px-5 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl text-lg font-semibold w-60 hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center space-x-2'
             >
               <Users className='w-5 h-5' />
               <span>학생으로 참여하기</span>
@@ -229,6 +231,55 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* 앱 소개 영상 */}
+        <div className='mb-16' ref={videoContainerRef}>
+          <div className='text-center mb-12'>
+            <h2 className='text-3xl font-bold text-gray-900 mb-4'>
+              🎬 우리 앱 소개 영상
+            </h2>
+            <p className='text-lg text-gray-600'>
+              과학 탐구 여행이 어떻게 작동하는지 영상으로 확인해보세요
+            </p>
+          </div>
+
+          <div className='max-w-4xl mx-auto'>
+            <div className='relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100'>
+              <div className='aspect-video relative'>
+                <iframe
+                  ref={videoRef}
+                  src='https://www.youtube.com/embed/KnqmfsL1KUQ?si=Mi6Nc7rxPXesxFlc&enablejsapi=1&autoplay=1&mute=1&rel=0&modestbranding=1&vq=hd1080&loop=0&controls=1&playsinline=1'
+                  title='과학 탐구 여행 소개 영상'
+                  className='absolute inset-0 w-full h-full'
+                  frameBorder='0'
+                  allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+                  allowFullScreen
+                />
+              </div>
+
+              {/* 영상 상태 표시 */}
+              <div className='absolute top-4 right-4 z-10'>
+                <div
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    isVideoVisible
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {isVideoVisible ? '재생 중' : '대기 중'}
+                </div>
+              </div>
+            </div>
+
+            {/* 영상 설명 */}
+            <div className='mt-8 text-center'>
+              <div className='inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium'>
+                <Sparkles className='w-4 h-4' />
+                <span>스크롤하면 자동으로 재생됩니다</span>
+              </div>
+            </div>
           </div>
         </div>
 
